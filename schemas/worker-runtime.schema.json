@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "Job": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "repository": {
+          "const": "jasonjiang8866/MLsysZero2Hero",
+          "default": "jasonjiang8866/MLsysZero2Hero",
+          "title": "Repository",
+          "type": "string"
+        },
+        "experiment": {
+          "const": "E00",
+          "default": "E00",
+          "title": "Experiment",
+          "type": "string"
+        },
+        "attempt": {
+          "pattern": "^[A-Za-z0-9_-]{1,80}$",
+          "title": "Attempt",
+          "type": "string"
+        },
+        "source_sha": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Source Sha",
+          "type": "string"
+        },
+        "image_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Image Digest",
+          "type": "string"
+        },
+        "gpu": {
+          "enum": [
+            "NVIDIA GeForce RTX 4090",
+            "NVIDIA GeForce RTX 3090",
+            "NVIDIA GeForce RTX 5090",
+            "NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 1g.24gb"
+          ],
+          "title": "Gpu",
+          "type": "string"
+        },
+        "runtime_seconds": {
+          "default": 30,
+          "maximum": 60,
+          "minimum": 1,
+          "title": "Runtime Seconds",
+          "type": "integer"
+        },
+        "collect_seconds": {
+          "default": 120,
+          "maximum": 300,
+          "minimum": 1,
+          "title": "Collect Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "attempt",
+        "source_sha",
+        "image_digest",
+        "gpu"
+      ],
+      "title": "Job",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "job": {
+      "$ref": "#/$defs/Job"
+    },
+    "pod_id": {
+      "pattern": "^[a-z0-9]{1,64}$",
+      "title": "Pod Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job",
+    "pod_id"
+  ],
+  "title": "Runtime",
+  "type": "object"
+}

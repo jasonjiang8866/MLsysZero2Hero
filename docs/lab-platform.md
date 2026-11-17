@@ -2,7 +2,7 @@
 
 [简体中文](lab-platform.zh-CN.md) · [Roadmap](roadmap.md)
 
-## Implemented in this change
+## Implemented
 
 - Python 3.12 package, uv lockfile, pinned Broker revision, CPU CI and wheel build.
 - E00 CUDA Driver API smoke: memory roundtrip followed by a real FP32 vector-add
@@ -17,6 +17,11 @@
   require exact readback. Existing attempts and unresolved resources block new work.
 - A manual main-only RunPod **GET-only** catalog/inventory workflow, using the
   owner's repository secret only on its controller step.
+
+- A source-bound course worker, authenticated result server, bounded HTTPS collector,
+  Linux atomic result publication, and ownership-checked cleanup primitives.
+- Docker build/CPU-refusal CI and a manual main-only GHCR publication workflow.
+  See the [worker protocol and operational boundaries](worker-protocol.md).
 
 **M1 is in progress, not fully accepted.** CPU tests use explicit driver/provider
 doubles; they do not demonstrate real GPU execution. PTX JIT compatibility and actual
@@ -43,9 +48,10 @@ uv run --locked mlsys-lab verify --source-sha "$(git rev-parse HEAD)" --output o
 
 Use a new output directory per attempt. Failure exits 2 and never writes a success
 manifest. A timeout terminates the child; stopping a process is **not** proof of
-cloud-resource deletion. Later container integration must supply and independently
-verify the build revision and immutable image digest. The current command binds
-results to declared provenance; it does not attest the source of an arbitrary binary.
+cloud-resource deletion. The course container checks its baked build revision and publication checks the
+registry image label. The live controller must still verify the selected immutable
+image and provider allocation; the standalone smoke command binds results to declared
+provenance and does not attest the source of an arbitrary binary.
 
 The driver-reported CUDA version is host capability, not a verified toolkit or
 PyTorch runtime. E00 does not verify PyTorch, Triton, throughput or training quality.
@@ -99,12 +105,14 @@ history or weakening those guards.
 
 ## Remaining M1 activation gates
 
-1. Build/publish a course worker at an immutable digest with a verified source label.
-   Add an authenticated readiness/result server around this E00 implementation.
+1. Run the prepared publication workflow and verify a publicly pullable immutable
+   course image. Docker/build/protocol implementation is present; release and actual
+   GPU execution are pending.
 2. Integrate a course-specific lifecycle controller with a durable remote budget
    ledger, execution identity and one create intent per reserved attempt.
-3. Add tested artifact retrieval/upload receipts, ownership-checked termination,
-   direct absent-resource checks and independent inventory verification.
+3. Wire the tested collector and cleanup primitives to trusted durable state; add
+   artifact-upload receipts. Local export is not durable upload, and a cleanup helper
+   without the journal/reaper integration is not independent crash recovery.
 4. Add independent cancellation/crash recovery and cleanup-only reaping. Verify
    recovery ownership and interrupted-run takeover before exposing paid dispatch.
 5. Obtain fresh quote/inventory, select hardware within existing authorized scope,

@@ -18,7 +18,7 @@ The first release is a coherent single-GPU learning path, not a claim that the e
 
 ## M1 implementation status / M1 实现状态
 
-See the [English platform guide](lab-platform.md) and [中文实验底座](lab-platform.zh-CN.md). The foundation implements package/lockfile, CPU CI, PTX kernel smoke, bundle verification, cumulative CAS budget reservations and read-only preflight. Paid creation, worker publication, remote ledger activation, result transport and independent cloud cleanup/recovery are still pending. / 已实现底座，付费创建、镜像发布、远程账本、产物传输和独立云端清理恢复尚未接入。
+See the [English platform guide](lab-platform.md) and [中文实验底座](lab-platform.zh-CN.md). The foundation implements package/lockfile, CPU CI, PTX kernel smoke, bundle verification, cumulative CAS budget reservations and read-only preflight. The [worker/transport increment](worker-protocol.md) adds a container, authenticated collection and ownership-checked cleanup primitives. Paid creation, image publication, remote ledger activation, upload receipts and independent recovery wiring remain pending. / 已增加 worker 镜像构建、认证传输和所有权清理原语；付费创建、镜像发布、远程账本、上传回执及独立恢复接线仍待完成。
 
 ## M1 acceptance contract / M1 验收约定
 
