@@ -6,7 +6,7 @@ A bilingual, experiment-driven path from machine learning development to **ML Sy
 
 For learners who can already code and train a model. “Zero” means no prior systems-optimization experience. Python, PyTorch tensors/autograd, basic linear algebra, Linux and Git are prerequisites; C++/CUDA foundations are taught on the kernel track.
 
-**Status: curriculum planning. No runnable lessons or paid experiment workflow yet.** This repository does not claim that the planned labs or benchmarks have been completed.
+**Status: M1 lab foundation in development.** A bounded CUDA kernel smoke command, result validation, budget reservations and GET-only RunPod discovery are implemented. CPU tests are not real GPU acceptance; paid lifecycle integration and the full lessons remain pending. See [lab platform](docs/lab-platform.md).
 
 ## Start with a question
 
@@ -39,7 +39,7 @@ Experiments are tiered: CPU/reference-trace access; one GPU; 2–4 GPUs; verifie
 
 ## Initial experiment envelope
 
-The owner authorized **US$20 and 1,000 minutes** for this project's initial experiments on 2026-11-16 (Asia/Singapore). We conservatively account time as aggregate allocated GPU-minutes, including startup and retries. The plan keeps all charges within US$20, including temporary storage and cleanup. These are planning limits; enforcement is not implemented yet.
+The owner authorized **US$20 and 1,000 minutes** for this project's initial experiments on 2026-11-16 (Asia/Singapore). We conservatively account time as aggregate allocated GPU-minutes, including startup and retries. The plan keeps all charges within US$20, including temporary storage and cleanup. Cumulative admission logic is implemented and tested offline; remote deployment and paid lifecycle enforcement remain pending.
 
 The owner reports a RunPod repository secret is configured. Its name, availability and API access remain to be validated safely in Actions. No credential should be pasted into an issue, log or artifact.
 

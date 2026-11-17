@@ -1,0 +1,174 @@
+{
+  "$defs": {
+    "Quote": {
+      "additionalProperties": false,
+      "properties": {
+        "observed_at": {
+          "title": "Observed At",
+          "type": "number"
+        },
+        "compute_micro_usd_per_gpu_hour": {
+          "exclusiveMinimum": 0,
+          "title": "Compute Micro Usd Per Gpu Hour",
+          "type": "integer"
+        },
+        "storage_micro_usd_per_pod_hour": {
+          "minimum": 0,
+          "title": "Storage Micro Usd Per Pod Hour",
+          "type": "integer"
+        },
+        "extras_micro_usd": {
+          "minimum": 0,
+          "title": "Extras Micro Usd",
+          "type": "integer"
+        },
+        "gpu_count": {
+          "maximum": 4,
+          "minimum": 1,
+          "title": "Gpu Count",
+          "type": "integer"
+        },
+        "wall_seconds": {
+          "maximum": 1800,
+          "minimum": 1,
+          "title": "Wall Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "observed_at",
+        "compute_micro_usd_per_gpu_hour",
+        "storage_micro_usd_per_pod_hour",
+        "extras_micro_usd",
+        "gpu_count",
+        "wall_seconds"
+      ],
+      "title": "Quote",
+      "type": "object"
+    },
+    "Reservation": {
+      "additionalProperties": false,
+      "properties": {
+        "experiment": {
+          "title": "Experiment",
+          "type": "string"
+        },
+        "quote": {
+          "$ref": "#/$defs/Quote"
+        },
+        "reserved_micro_usd": {
+          "exclusiveMinimum": 0,
+          "title": "Reserved Micro Usd",
+          "type": "integer"
+        },
+        "gpu_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Gpu Seconds",
+          "type": "integer"
+        },
+        "source_sha": {
+          "pattern": "^[a-f0-9]{40}$",
+          "title": "Source Sha",
+          "type": "string"
+        },
+        "image_digest": {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "title": "Image Digest",
+          "type": "string"
+        },
+        "state": {
+          "default": "reserved",
+          "enum": [
+            "reserved",
+            "creation_unknown",
+            "closed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "outcome": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "accepted",
+            "rejected",
+            "not_created"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "cleanup_evidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cleanup Evidence"
+        },
+        "observed_micro_usd": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Observed Micro Usd",
+          "type": "integer"
+        },
+        "observed_gpu_seconds": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Observed Gpu Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "experiment",
+        "quote",
+        "reserved_micro_usd",
+        "gpu_seconds",
+        "source_sha",
+        "image_digest"
+      ],
+      "title": "Reservation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "repository": {
+      "const": "jasonjiang8866/MLsysZero2Hero",
+      "default": "jasonjiang8866/MLsysZero2Hero",
+      "title": "Repository",
+      "type": "string"
+    },
+    "campaign": {
+      "const": "mlsys-initial-20261116",
+      "default": "mlsys-initial-20261116",
+      "title": "Campaign",
+      "type": "string"
+    },
+    "revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "reservations": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Reservation"
+      },
+      "default": {},
+      "title": "Reservations",
+      "type": "object"
+    }
+  },
+  "title": "State",
+  "type": "object"
+}
