@@ -1,0 +1,33 @@
+[project]
+name = "mlsyszero2hero"
+version = "0.1.0"
+description = "Reproducible bilingual ML systems laboratory"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = ["runpod-ci-broker", "pydantic>=2.12,<3"]
+
+[project.scripts]
+mlsys-lab = "mlsys_lab.cli:main"
+
+[tool.uv.sources]
+runpod-ci-broker = { git = "https://github.com/jasonjiang8866/runpod-ci-broker", rev = "5822d7f79051f8b4945a6c394743fcd1772d8405" }
+
+[dependency-groups]
+dev = ["pytest>=8.4,<10", "ruff>=0.14", "pyyaml>=6,<7"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mlsys_lab"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -4,9 +4,11 @@
 
 ## Current state / 当前状态
 
-Planning only: no controller, image, dispatch workflow or paid run has been created by this change. The owner reports a repository API key is configured; expected secret name is RUNPOD_API_KEY, but name/presence/connectivity are unverified. The current GitHub connector cannot read secrets. Never retrieve or print their values. / 仅规划；本次未创建控制器、镜像、运行工作流或付费资源。用户已报告配置 key，但名称、存在性及连通性尚未验证。
+M1 foundation is implemented: pinned dependencies, local CUDA kernel smoke, result verification, cumulative budget logic and a manual GET-only preflight workflow. Paid launch and independent cloud recovery are not integrated yet. See [English guide](../docs/lab-platform.md) / [中文指南](../docs/lab-platform.zh-CN.md). / M1 底座已实现，付费启动与独立恢复未接入。
 
-Repository inspection found no workflow files and zero Actions runs. GitHub's workflow-list fetch was unsupported by the connector; absence of workflow files is established from the repository contents, not that failed endpoint. No direct workflow-dispatch tool is currently exposed. CLI/browser routes and RunPod inventory/current quotes have not been inspected. / 未发现工作流文件、Actions 零运行；工作流列表接口不可用不等于权限拒绝。CLI、浏览器、RunPod 库存及报价尚未检查。
+The owner reports RUNPOD_API_KEY is configured; presence/connectivity remain unverified for this repository until its manual main-only preflight runs. No key is retrieved or printed. No RunPod resources were created by this change. / key 是否存在及连通性待本仓库预检确认，本次未创建 RunPod 资源。
+
+The current connector exposes no workflow-dispatch tool; local gh is unauthenticated. No browser session was probed. Broker source and its successful regression evidence were inspected; its campaign-bound paid controller cannot be used as this project's budget authority. / 已检查 Broker 源码与成功回归，但不能借用其项目预算与付费控制器。
 
 ## Authorization record / 授权记录
 

@@ -1,0 +1,54 @@
+name: Publish course worker
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_publish:
+        description: Publish this main revision to GHCR (does not rent GPUs)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: course-worker-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'jasonjiang8866/MLsysZero2Hero' && github.ref == 'refs/heads/main' && inputs.confirm_publish
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - run: bash worker/build-image.sh "$GITHUB_SHA"
+      - name: Publish and verify registry image
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          DOCKER_CONFIG: ${{ runner.temp }}/mlsys-docker
+        run: |
+          set -euo pipefail
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true; rm -rf "$DOCKER_CONFIG"' EXIT
+          image="ghcr.io/jasonjiang8866/mlsyszero2hero-worker:sha-$GITHUB_SHA"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker tag "mlsys-worker:$GITHUB_SHA" "$image"
+          docker push "$image"
+          digest="$(docker buildx imagetools inspect "$image" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 2
+          immutable="ghcr.io/jasonjiang8866/mlsyszero2hero-worker@$digest"
+          docker pull "$immutable"
+          [[ "$(docker image inspect "$immutable" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" == "$GITHUB_SHA" ]]
+          [[ "$(docker run --rm --entrypoint cat "$immutable" /opt/mlsys/SOURCE_SHA)" == "$GITHUB_SHA" ]]
+          # Prove public pull visibility with an empty auth directory before recording success.
+          DOCKER_CONFIG="$(mktemp -d)" docker buildx imagetools inspect "$immutable" >/dev/null
+          printf '%s\n' "$immutable" > out/image/published-image.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: course-worker-publication-${{ github.run_id }}
+          path: out/image/
+          if-no-files-found: error
+          retention-days: 30

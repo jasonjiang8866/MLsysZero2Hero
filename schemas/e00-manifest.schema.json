@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "FileHash": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 65536,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bytes",
+        "sha256"
+      ],
+      "title": "FileHash",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "experiment": {
+      "const": "E00",
+      "default": "E00",
+      "title": "Experiment",
+      "type": "string"
+    },
+    "source_sha": {
+      "pattern": "^[a-f0-9]{40}$",
+      "title": "Source Sha",
+      "type": "string"
+    },
+    "image_digest": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Image Digest"
+    },
+    "kernel_verified": {
+      "const": true,
+      "default": true,
+      "title": "Kernel Verified",
+      "type": "boolean"
+    },
+    "cloud_acceptance": {
+      "const": "not_evaluated",
+      "default": "not_evaluated",
+      "title": "Cloud Acceptance",
+      "type": "string"
+    },
+    "files": {
+      "additionalProperties": {
+        "$ref": "#/$defs/FileHash"
+      },
+      "title": "Files",
+      "type": "object"
+    }
+  },
+  "required": [
+    "source_sha",
+    "image_digest",
+    "files"
+  ],
+  "title": "Manifest",
+  "type": "object"
+}
