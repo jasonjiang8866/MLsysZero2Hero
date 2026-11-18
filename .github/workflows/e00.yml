@@ -10,10 +10,12 @@ on:
         description: Verified upper price per hour for the entire 5 GB temporary disk, in micro-USD
         type: string
         required: true
+        default: '1000'
       extras_micro_usd:
         description: Verified upper bound for transfer and request charges per attempt, in micro-USD
         type: string
         required: true
+        default: '10000'
 permissions:
   contents: read
 concurrency:
