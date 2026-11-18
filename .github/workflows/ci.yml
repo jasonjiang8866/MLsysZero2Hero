@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
 permissions:
+  actions: read
   contents: read
 jobs:
   check:
@@ -24,3 +25,21 @@ jobs:
       - run: uv build
       - run: uv run --locked mlsys-lab --help
       # CPU tests/fakes never count as GPU validation. No repository secrets used.
+      - name: Prepare CPU receipt fixture
+        run: |
+          mkdir -p out/receipt-fixture
+          printf '%s\n' '{"fixture":"github-upload-receipt"}' > out/receipt-fixture/manifest.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: receipt_fixture
+        with:
+          name: E00-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/receipt-fixture/
+          retention-days: 1
+          if-no-files-found: error
+      - name: Verify fresh GitHub receipt against a local journal
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          ARTIFACT_ID: ${{ steps.receipt_fixture.outputs.artifact-id }}
+          ARCHIVE_DIGEST: ${{ steps.receipt_fixture.outputs.artifact-digest }}
+        run: uv run --locked python tests/integration/actions_receipt.py
