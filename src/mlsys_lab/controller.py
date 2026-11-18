@@ -17,6 +17,7 @@ from runpod_ci_broker.live import CreateHTTPError, LiveAPI
 from runpod_ci_broker.planner import reasons
 from runpod_ci_broker.provider import ProviderError, ReadOnlyRunPod
 
+from .artifact import github_json, uploaded_artifact
 from .budget import CAMPAIGN, REPOSITORY, Budget, Quote
 from .cleanup import Allocation, cleanup_owned, matches
 from .preflight import GPU_IDS, discovery_task
@@ -272,7 +273,7 @@ def main():
         elif action == "receipt":
             receipt(
                 j,
-                json.loads(Path("out/artifact.json").read_text()),
+                uploaded_artifact(j.run, j.attempt, env["ARTIFACT_ID"], fetch=github_json),
                 env["ARTIFACT_ID"],
                 env["ARCHIVE_DIGEST"],
                 output,

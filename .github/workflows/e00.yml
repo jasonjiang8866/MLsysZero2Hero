@@ -75,11 +75,7 @@ jobs:
           RCB_LEDGER_TOKEN: ${{ github.token }}
           ARTIFACT_ID: ${{ steps.bundle.outputs.artifact-id }}
           ARCHIVE_DIGEST: ${{ steps.bundle.outputs.artifact-digest }}
-        run: |
-          set -euo pipefail
-          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" > out/artifact.json
-          uv run --locked --no-sync python -m mlsys_lab.controller receipt
+        run: uv run --locked --no-sync python -m mlsys_lab.controller receipt
       - name: Verify deletion and settle budget
         if: always() && steps.launch.outcome != 'skipped'
         env:
