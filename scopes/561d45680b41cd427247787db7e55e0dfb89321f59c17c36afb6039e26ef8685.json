@@ -1,0 +1,1 @@
+{"center":"EU-RO-1","job":{"attempt":"E00-44308062916-1","collect_seconds":120,"experiment":"E00","gpu":"NVIDIA GeForce RTX 4090","image_digest":"sha256:2aa19add7c5f20b65591bac094c95e4067061b68504010235e8dd64662801206","repository":"jasonjiang8866/MLsysZero2Hero","runtime_seconds":30,"schema_version":1,"source_sha":"d1825f65771731153c79bde664f293b7e58d6379"},"phase":"prepared"}
