@@ -53,9 +53,9 @@ def observe(output: Path, api: ReadOnlyRunPod | None = None) -> dict:
         "query_status": "not_queried",
         "candidates": [],
         "launch_blockers": [
-            "course_worker_image_unpublished",
-            "live_controller_and_independent_recovery_not_integrated",
-            "durable_course_ledger_not_bootstrapped",
+            "course_image_digest_not_checked_by_discovery",
+            "run_manual_e00_for_paid_admission",
+            "ledger_balance_not_checked_by_discovery",
             "live_storage_transfer_quote_unverified",
             "specific_gpu_selection_pending",
         ],

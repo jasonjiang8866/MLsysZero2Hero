@@ -1,5 +1,7 @@
 # M1 实验底座
 
+**E00 controller update / 控制器更新** · The worker foundation described below now has a manual launcher, remote budget ledger, artifact receipts and independent recovery. The first GPU run is pending. / 下方记录底座实现时的状态。手动启动、远程账本、产物回执和独立恢复现已接入，首次 GPU 验收待执行。[Current E00 runbook / 运行说明](../runpod/e00.md)
+
 [English](lab-platform.md) · [开发路线](roadmap.md)
 
 ## 已实现
@@ -23,7 +25,7 @@
 
 **M1 尚在进行，未整体验收。** CPU 测试使用明确标记的 driver/provider 替身，
 不代表真实 GPU 执行。PTX 的 JIT 兼容性与真实 kernel 运行仍待 GPU 验证。
-本次没有启用付费控制器。
+真实实验通过 E00 手动工作流启动。
 
 ## 本地使用
 
@@ -73,8 +75,7 @@ E00 不验证 PyTorch、Triton、吞吐或训练质量；结果明确标注非�
 保留恢复空间；原 E00–E06 单项上限也跨重试累计。
 
 `Budget` 使用固定 Broker 的 Store 协议：`SQLiteStore` 用于离线本地测试；
-`GitHubContentsStore` 可在独立分支持久化 CAS 记录。课程远程账本尚未初始化或
-做真实集成验证。禁止将临时 runner 上的 SQLite 当作生产账本。状态缺失即拒绝，
+`GitHubContentsStore` 可在独立分支持久化 CAS 记录。课程远程账本已在 broker-state 初始化并读回验证。禁止将临时 runner 上的 SQLite 当作生产账本。状态缺失即拒绝，
 初始化必须明确执行且不能覆盖已有账本。
 
 清理后仍保留原预留额；观测用量更大时，下一次准入按更大的值计算。超额事实会
@@ -89,22 +90,9 @@ smoke 证据，但付费控制器绑定自身仓库、固定 campaign、前序�
 5 小时历史。本项目复用 GET adapter、严格数据模型、driver 绑定和存储原语，
 不复制那段预算历史，也不放松它的检查。
 
-## M1 剩余激活门槛
+## E00 云端验收
 
-1. 执行已准备好的发布工作流，取得可公开拉取的固定 digest。构建和传输协议已
-   实现；实际发布及 GPU 验证尚未完成。
-2. 接入课程自己的生命周期控制器、远程预算账本及运行身份；每次预留最多一个
-   创建意图。
-3. 将已测试的下载和清理原语接入可信持久状态，补齐产物上传回执。本地导出不
-   等于持久上传；未接入账本/reaper 的清理函数不等于已具备独立崩溃恢复。
-4. 增加取消/崩溃后的独立恢复及仅清理的 reaper；付费 dispatch 启用前验证
-   所有权和中断运行接管。
-5. 获取新报价/库存，在现有授权范围内选卡，验证镜像可拉取及驱动兼容，然后在
-   E00 的 1 美元/30 分钟和项目剩余额度内运行。
-
-预算授权继续有效。合并/发布范围和可用的工作流触发通道单独记录。本次检查没有
-发现 dispatch 工具，本地 gh 未登录，也未探查浏览器会话。这是能力状态，不是
-自动审批拒绝。
+发布当前课程镜像，核实磁盘等费用上限，再手动运行 E00。参见[运行说明](../runpod/e00.md)。
 
 ## 来源和许可
 

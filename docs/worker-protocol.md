@@ -1,13 +1,8 @@
 # E00 worker and result transport / E00 worker 与结果传输
 
+**E00 controller update / 控制器更新** · The worker foundation described below now has a manual launcher, remote budget ledger, artifact receipts and independent recovery. The first GPU run is pending. / 下方记录底座实现时的状态。手动启动、远程账本、产物回执和独立恢复现已接入，首次 GPU 验收待执行。[Current E00 runbook / 运行说明](../runpod/e00.md)
+
 [Platform (EN)](lab-platform.md) · [实验底座（中文）](lab-platform.zh-CN.md)
-
-This increment prepares a deployable worker and tested operational primitives.
-It does **not** activate a paid launcher or independent reaper. No course image
-has yet been published and no course GPU execution is claimed.
-
-本轮提供可构建的 worker 和已测试的运行原语，尚未启用付费启动器或独立 reaper。
-课程镜像尚未实际发布，也没有声称课程已在 GPU 上运行。
 
 ## Components / 组件
 
@@ -98,13 +93,7 @@ reconciled by GET before another deletion request. A 204 alone is never success.
 再次核对所有权并持久记录意图。账本写入失败或身份不同就拒绝删除。DELETE 超时先
 查询状态，不盲目重复。直接 404 与完整库存两次均确认不存在，才返回删除成功。
 
-The durable callback implementation and independent `workflow_run` recovery are
-still to be integrated. These tests prove the helper's decisions using provider
-doubles; they do not prove live deletion, trusted crash takeover or a provider
-spend cap. No helper closes the project budget automatically.
-
-持久回调、独立恢复工作流和中断任务接管还未接入；当前测试使用供应商替身，不能
-作为真实删除、崩溃恢复或供应商强制费用上限的证据。清理原语不会自动关闭预算记录。
+The controller persists cleanup intent and evidence on broker-state. A separate workflow reconciles the completed owner attempt. / 控制器在 broker-state 持久化清理意图及证据，独立恢复任务对原尝试重新核验。
 
 ## Validation and next gate / 验证与下一门槛
 
@@ -115,8 +104,7 @@ incomplete inventories and failed durable checkpoints. Image CI checks build and
 CPU refusal. Real PTX JIT/GPU execution and the RunPod TLS path still need E00.
 
 测试覆盖实际本地 HTTP，但计算结果来自明确标记的 driver 替身。真实 PTX JIT、GPU
-运算及 RunPod TLS 路径仍须通过 E00 验证。后续先接上持久账本、启动/回收/上传回执
-和独立 reaper，再沿用 **US$20 / 1000 GPU 分钟**额度运行 E00（子上限 US$1 / 30 分钟）。
+运算及 RunPod TLS 路径仍须通过 E00 验证。E00 子上限为 US$1 / 30 GPU 分钟，计入项目累计额度。
 
 The transport and cleanup design reuse patterns and APIs from the pinned
 [runpod-ci-broker](https://github.com/jasonjiang8866/runpod-ci-broker/tree/5822d7f79051f8b4945a6c394743fcd1772d8405),

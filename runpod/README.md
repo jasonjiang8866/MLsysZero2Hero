@@ -4,7 +4,7 @@
 
 ## Current state / 当前状态
 
-M1 foundation is implemented: pinned dependencies, local CUDA kernel smoke, result verification, cumulative budget logic and a manual GET-only preflight workflow. Paid launch and independent cloud recovery are not integrated yet. See [English guide](../docs/lab-platform.md) / [中文指南](../docs/lab-platform.zh-CN.md). / M1 底座已实现，付费启动与独立恢复未接入。
+M1 foundation is implemented: pinned dependencies, local CUDA kernel smoke, result verification, cumulative budget logic and a manual GET-only preflight workflow. The [E00 workflow](e00.md) integrates manual launch, durable receipts and independent recovery. Live acceptance is pending. / E00 已接入手动启动、持久回执和独立清理，真实 GPU 验收待运行。
 
 The owner reports RUNPOD_API_KEY is configured; presence/connectivity remain unverified for this repository until its manual main-only preflight runs. No key is retrieved or printed. No RunPod resources were created by this change. / key 是否存在及连通性待本仓库预检确认，本次未创建 RunPod 资源。
 
