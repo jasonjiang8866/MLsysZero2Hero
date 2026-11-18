@@ -1,5 +1,7 @@
 # M1 lab platform
 
+**E00 controller update / 控制器更新** · The worker foundation described below now has a manual launcher, remote budget ledger, artifact receipts and independent recovery. The first GPU run is pending. / 下方记录底座实现时的状态。手动启动、远程账本、产物回执和独立恢复现已接入，首次 GPU 验收待执行。[Current E00 runbook / 运行说明](../runpod/e00.md)
+
 [简体中文](lab-platform.zh-CN.md) · [Roadmap](roadmap.md)
 
 ## Implemented
@@ -25,7 +27,7 @@
 
 **M1 is in progress, not fully accepted.** CPU tests use explicit driver/provider
 doubles; they do not demonstrate real GPU execution. PTX JIT compatibility and actual
-kernel execution remain to be checked on a GPU. No paid controller is enabled here.
+kernel execution remain to be checked on a GPU. Use the manual E00 workflow for a cloud run.
 
 ## Local commands
 
@@ -84,14 +86,14 @@ sub-cap from the course plan also applies cumulatively across retries.
 
 `Budget` uses the pinned Broker's Store protocol: `SQLiteStore` is for local offline
 tests, while `GitHubContentsStore` can persist CAS records on a dedicated branch.
-The remote course ledger has not been bootstrapped or integration-tested. Never use
+The remote course ledger was initialized and read back on broker-state. Never use
 an ephemeral runner SQLite database as the production budget ledger. Missing state
 fails closed; bootstrap is explicit and cannot overwrite an existing ledger.
 
 The accounting model retains reservations after cleanup; greater observed usage
 supersedes the reserve for subsequent admissions. It records overruns instead of
 discarding evidence that exceeds a limit. `close()` requires an evidence hash, but
-the future live controller must verify the underlying receipt. A hash supplied by
+the E00 controller verifies the underlying receipt. A hash supplied by
 a caller does not itself prove deletion. These are software admission limits, not
 provider-enforced spend guarantees.
 
@@ -103,26 +105,9 @@ predecessor records and US$20/5-hour history. This repository reuses the GET ada
 strict models, driver bindings and storage primitives without copying that spending
 history or weakening those guards.
 
-## Remaining M1 activation gates
+## Live E00 acceptance
 
-1. Run the prepared publication workflow and verify a publicly pullable immutable
-   course image. Docker/build/protocol implementation is present; release and actual
-   GPU execution are pending.
-2. Integrate a course-specific lifecycle controller with a durable remote budget
-   ledger, execution identity and one create intent per reserved attempt.
-3. Wire the tested collector and cleanup primitives to trusted durable state; add
-   artifact-upload receipts. Local export is not durable upload, and a cleanup helper
-   without the journal/reaper integration is not independent crash recovery.
-4. Add independent cancellation/crash recovery and cleanup-only reaping. Verify
-   recovery ownership and interrupted-run takeover before exposing paid dispatch.
-5. Obtain fresh quote/inventory, select hardware within existing authorized scope,
-   verify image pull/driver compatibility, then run E00 within its US$1/30-minute
-   allocation and the remaining project budget.
-
-The existing budget authorization persists. Merge/release scope and a usable
-workflow-dispatch route remain separate from that budget. At this implementation
-check, no dispatch tool was exposed and local gh was unauthenticated; no browser
-session was probed. This is capability state, not an automatic approval rejection.
+Publish the current worker, verify the ancillary price bounds and run the manual workflow. See the [E00 runbook](../runpod/e00.md).
 
 ## Sources and licensing
 

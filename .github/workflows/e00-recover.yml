@@ -1,0 +1,32 @@
+name: Recover course E00 allocation
+on:
+  workflow_run:
+    workflows: [Course E00 GPU validation]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  recover:
+    if: github.repository == 'jasonjiang8866/MLsysZero2Hero' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.path == '.github/workflows/e00.yml'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+        with:
+          version: '0.13.5'
+          enable-cache: false
+      - run: uv sync --locked --no-dev --python 3.12
+      - name: Reconcile completed owner attempt and clean up
+        env:
+          OWNER_RUN: ${{ github.event.workflow_run.id }}
+          OWNER_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          RCB_LEDGER_TOKEN: ${{ github.token }}
+        run: uv run --locked --no-sync python -m mlsys_lab.controller recover
