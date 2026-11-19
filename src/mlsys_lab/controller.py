@@ -122,7 +122,16 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
         wall_seconds=600,
     )
     job = Job(attempt=j.attempt, source_sha=source, image_digest=image, gpu=chosen.gpu_id)
-    j.save(job=job.model_dump(), center=chosen.data_center, phase="prepared")
+    centers = sorted(
+        {
+            r.data_center
+            for r in eligible
+            if r.gpu_id == job.gpu and r.hourly_usd == chosen.hourly_usd
+        }
+    )
+    j.save(
+        job=job.model_dump(), center=chosen.data_center, eligible_centers=centers, phase="prepared"
+    )
     j.budget.reserve(
         j.attempt, "E00", quote, now=time.time(), source_sha=source, image_digest=image
     )
@@ -134,7 +143,7 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
         "image": job.image,
         "gpu": {"id": job.gpu, "count": 1, "minCudaVersion": "12.8"},
         "cloud": "SECURE",
-        "dataCenterIds": [intent.data_center],
+        "dataCenterIds": centers,
         "disk": 5,
         "mounts": {},
         "ports": ["8000/http"],

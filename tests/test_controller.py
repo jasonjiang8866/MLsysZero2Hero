@@ -107,3 +107,27 @@ def test_ambiguous_create_with_empty_inventory_keeps_budget_locked(setup):
     with pytest.raises(ValueError, match="creation_unresolved"):
         c.recover(c.Journal(store, "123", "1"), api)
     assert j.budget.load()[1].reservations[j.attempt].state != "closed"
+
+
+def test_single_create_offers_only_eligible_equally_priced_centers(setup):
+    store, api, output = setup
+
+    class Catalog(ReadOnlyFake):
+        def snapshot(self, task):
+            rows, inventory = super().snapshot(task)
+            original = rows[0]
+            for changes in (
+                {"data_center": "another-dc"},
+                {"data_center": "premium-dc", "hourly_usd": 0.9},
+                {"data_center": "other-gpu", "gpu_id": task.gpu_allowlist[1]},
+                {"data_center": "old-cuda", "cuda_versions": ["12.7"]},
+            ):
+                rows.append(original.model_copy(update=changes))
+            return rows, inventory
+
+    journal = c.Journal(store, "123", "1")
+    c.launch(journal, api, Catalog(), SHA, IMAGE, output, 2000, 1000)
+    assert api.ids == ["pod123"]
+    assert (
+        api.pod["dataCenterIds"] == journal.record["eligible_centers"] == ["another-dc", "test-dc"]
+    )

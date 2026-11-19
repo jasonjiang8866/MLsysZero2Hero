@@ -94,17 +94,24 @@ def test_stale_and_future_quotes_block(budget, observed):
 
 
 def test_two_gpus_consume_double_minutes(budget):
+    low_rate = quote(
+        gpu_count=2, wall_seconds=1800, compute_micro_usd_per_gpu_hour=1, extras_micro_usd=0
+    )
+    for index in range(3):
+        reserve(budget, f"two-{index}", q=low_rate)
+        close(budget, f"two-{index}")
     with pytest.raises(LedgerError, match="budget"):
-        reserve(budget, q=quote(gpu_count=2, wall_seconds=1000))
+        reserve(budget, "two-3", q=low_rate)
 
 
 def test_retries_never_reset_experiment_cap(budget):
-    for i in range(3):
-        reserve(budget, f"try-{i}")
+    cheap = quote(compute_micro_usd_per_gpu_hour=100_000, extras_micro_usd=0)
+    for i in range(20):
+        reserve(budget, f"try-{i}", q=cheap)
         close(budget, f"try-{i}")
     with pytest.raises(LedgerError, match="budget"):
-        reserve(budget, "try-3")
-    assert len(budget.load()[1].reservations) == 3
+        reserve(budget, "try-20", q=cheap)
+    assert len(budget.load()[1].reservations) == 20
 
 
 def test_unknown_create_blocks_retries_and_other_experiments(budget):
@@ -193,4 +200,4 @@ def test_lost_write_without_persist_does_not_permit_create(budget, monkeypatch):
 
 def test_allocations_preserve_recovery_reserve():
     assert sum(v[0] for v in ALLOCATIONS.values()) == 18_000_000
-    assert sum(v[1] for v in ALLOCATIONS.values()) == 48_000
+    assert sum(v[1] for v in ALLOCATIONS.values()) == 58_200
