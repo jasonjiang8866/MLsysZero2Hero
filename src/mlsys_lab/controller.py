@@ -297,7 +297,7 @@ def main():
         code = str(exc) if type(exc) in (ValueError, LedgerError, ProviderError) else ""
         print(
             json.dumps(
-                {"error": code if re.fullmatch(r"[a-z_]{1,80}", code) else "controller_failed"}
+                {"error": code if re.fullmatch(r"[a-z0-9_]{1,80}", code) else "controller_failed"}
             )
         )
         return 2
