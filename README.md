@@ -6,7 +6,7 @@ A bilingual, experiment-driven path from machine learning development to **ML Sy
 
 For learners who can already code and train a model. “Zero” means no prior systems-optimization experience. Python, PyTorch tensors/autograd, basic linear algebra, Linux and Git are prerequisites; C++/CUDA foundations are taught on the kernel track.
 
-**Status: M1 lab foundation in development.** A bounded CUDA kernel smoke command, result validation, budget reservations and GET-only RunPod discovery are implemented. CPU tests are not real GPU acceptance; live E00 acceptance and the full lessons remain pending. See [lab platform](docs/lab-platform.md).
+**Start the labs.** [E00 passed on an RTX 4090](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041). In [E01 · Why is the GPU waiting?](lessons/e01/README.md), compare host delays and fragmented launches on one GPU. The lesson and runner are available for local use. Course-hosted E01 hardware acceptance is pending.
 
 ## Start with a question
 

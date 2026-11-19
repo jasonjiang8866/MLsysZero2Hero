@@ -10,7 +10,7 @@ Hardware tiers: **T0** CPU, original simulations or sourced traces; **T1** one c
 | --- | --- | --- | --- | --- |
 | L00 | Why systems matter / 系统工程的价值 | DeepSeek-V3/H800 opening; R1 context / 开场案例与问题地图 | T0: map bottlenecks to course modules / 将瓶颈映射到后续课程 | ML + coding |
 | L01 | Measurement / 正确测量 | Async execution, CUDA events, warmup, repetitions, percentiles / 异步、计时、预热、重复、分位数 | T1: expose a false speedup; distinguish host dispatch from completed GPU work / 拆解虚假加速 | L00 |
-| L02 | GPU idleness / GPU 空转 | DataLoader, CPU/I/O starvation, launch gaps, synchronization, stragglers / 数据不足、启动间隙、同步与慢任务 | T1: inject one bottleneck at a time; trace-backed diagnosis / 逐一注入瓶颈并用 trace 证明 | L01 |
+| L02 | [GPU idleness](../lessons/e01/README.md) / [GPU 空转](../lessons/e01/README.zh-CN.md) | DataLoader, CPU/I/O starvation, launch gaps, synchronization, stragglers / 数据不足、启动间隙、同步与慢任务 | T1: inject one bottleneck at a time; trace-backed diagnosis / 逐一注入瓶颈并用 trace 证明 | L01 |
 | L03 | GPU architecture / GPU 架构 | SM/warp, registers, shared memory, HBM, Tensor Cores, coalescing, Roofline / 执行与存储层级、算术强度 | T1: compare measured bandwidth and arithmetic intensity / 带宽与计算瓶颈分析 | L01 |
 | L04 | Kernel foundations / 算子基础 | C++/CUDA primer, Triton, reduction, RMSNorm, softmax, GEMM, fusion, tuning / 基础编程、融合、调优 | T1: correctness across shapes/dtypes, including tails and strides; benchmark / 数值、尾块、步长与性能 | L02–03 |
 | L05 | Attention taxonomy / Attention 分类 | SDPA, causal masks, MHA/MQA/GQA, MLA, local/sparse/linear attention / 语义、参数共享与近似的区别 | T0/T1: calculate compute and KV storage; compare only equivalent semantics / 计算与缓存分析、等价语义对照 | L03–04 |
