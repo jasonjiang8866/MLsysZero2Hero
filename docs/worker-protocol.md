@@ -104,7 +104,7 @@ incomplete inventories and failed durable checkpoints. Image CI checks build and
 CPU refusal. Real PTX JIT/GPU execution and the RunPod TLS path still need E00.
 
 测试覆盖实际本地 HTTP，但计算结果来自明确标记的 driver 替身。真实 PTX JIT、GPU
-运算及 RunPod TLS 路径仍须通过 E00 验证。E00 子上限为 US$1 / 30 GPU 分钟，计入项目累计额度。
+运算及 RunPod TLS 路径仍须通过 E00 验证。E00 子上限为 US$1 / 200 GPU 分钟，计入项目累计额度。
 
 The transport and cleanup design reuse patterns and APIs from the pinned
 [runpod-ci-broker](https://github.com/jasonjiang8866/runpod-ci-broker/tree/5822d7f79051f8b4945a6c394743fcd1772d8405),

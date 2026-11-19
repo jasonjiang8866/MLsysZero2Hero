@@ -20,11 +20,11 @@ CAMPAIGN = "mlsys-initial-20261116"
 KEY = hashlib.sha256(f"{REPOSITORY}:{CAMPAIGN}".encode()).hexdigest()
 MONEY_CAP = 20_000_000  # Integer micro-USD; no binary floating point accounting.
 TIME_CAP = 60_000  # Aggregate allocated GPU-seconds, not wall time.
-# Keep $2/200 GPU-minutes reserved for recovery, outside normal admissions.
+# Keep $2/30 GPU-minutes reserved for recovery, outside normal admissions.
 WORK_MONEY_CAP = 18_000_000
-WORK_TIME_CAP = 48_000
+WORK_TIME_CAP = TIME_CAP - 30 * 60
 ALLOCATIONS = {
-    "E00": (1_000_000, 1800),
+    "E00": (1_000_000, 200 * 60),
     "E01": (3_000_000, 9000),
     "E02": (3_000_000, 10800),
     "E03": (3_000_000, 9600),

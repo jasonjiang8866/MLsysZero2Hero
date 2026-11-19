@@ -20,23 +20,25 @@ The current connector exposes no workflow-dispatch tool; local gh is unauthentic
 - No persistent volume creation/deletion or unrelated resource modification is included. Prefer ephemeral synthetic inputs. / 不包含持久卷增删及无关资源修改。
 - This change incurs US$0 in RunPod charges. Account/project resources and unrelated charges remain unverified. / 本次未触发 RunPod 费用，账户现有资源及其他支出未验证。
 
-## Proposed allocation / 拟分配额度
+## Allocation / 实验额度
+
+On 2026-11-19 the owner raised the cumulative E00 time allowance to 200 GPU-minutes. The additional 170 minutes come from the time reserve. Existing reservations count toward the new limit. / 11 月 19 日批准 E00 时间上限调至 200 分钟，从时间预备额度调入 170 分钟，历史预留继续累计。
 
 These are **maximum envelopes, not price quotes or spending targets**. Reductions are expected when experiments finish early. Full course implementation may require later reprioritization or new funding; the present envelope funds initial validation only. / 以下是上限，不是报价或必须花完的目标；仅用于首轮验证。
 
 | ID | Experiment / 实验 | Tier | USD ceiling | Aggregate GPU-minutes |
 | --- | --- | --- | ---: | ---: |
-| E00 | Provision → CUDA smoke → artifact → deletion / 创建到回收闭环 | T1 | 1 | 30 |
+| E00 | Provision → CUDA smoke → artifact → deletion / 创建到回收闭环 | T1 | 1 | 200 |
 | E01 | Timing and GPU starvation / 计时与空转诊断 | T1 | 3 | 150 |
 | E02 | RMSNorm/softmax and fusion / 基础算子与融合 | T1 | 3 | 180 |
 | E03 | Dense vs blockwise attention / Attention 正确性与显存 | T1 | 3 | 160 |
 | E04 | Collectives and minimal Ring Attention / 集合通信与最小 ring | T2 conditional | 4 | 160 |
 | E05 | MoE skew and balance / MoE 偏斜与均衡 | T1/T2 conditional | 2 | 80 |
 | E06 | Small serving workload / 小模型 serving | T1 conditional | 2 | 40 |
-| Reserve | Recovery, storage, transfer, cleanup / 恢复、存储、传输、清理 | — | 2 | 200 |
+| Reserve | Recovery, storage, transfer, cleanup / 恢复、存储、传输、清理 | — | 2 | 30 |
 | **Total** | | | **20** | **1000** |
 
-Normal workloads total US$18 / 800 GPU-minutes. Keep US$2 / 200 GPU-minutes uncommitted initially. Retries debit the same project ledger. Do not automatically consume the recovery reserve for extra benchmarks. / 正常实验 18 美元/800 分钟，先保留 2 美元/200 分钟恢复空间。
+Normal workloads total US$18 / 970 GPU-minutes. Keep US$2 / 30 GPU-minutes for recovery. Retries debit the same project ledger. Do not automatically consume the recovery reserve for extra benchmarks. / 正常实验 18 美元/970 分钟，先保留 2 美元/30 分钟恢复空间。
 
 T2 requires a verified multi-GPU host/topology; two unrelated marketplace Pods do not establish a usable RDMA/NVLink cluster. MIG slices do not automatically substitute for physical multi-GPU communication labs. Cross-rack performance is not an acceptance promise of this budget. / 多卡需核实同机/网络能力，不能将两个随意租的 Pod 当成 RDMA 集群，MIG 也不自动等于多卡实验。
 

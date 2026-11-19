@@ -81,7 +81,7 @@ raw Pod environments or provider response bodies are included in outputs.
 ## Budget persistence and limits
 
 The authorization remains **US$20 / 1,000 aggregate GPU-minutes**. Normal workloads
-may reserve only US$18 / 800 GPU-minutes, preserving recovery headroom. Each E00–E06
+may reserve only US$18 / 970 GPU-minutes, preserving recovery headroom. Each E00–E06
 sub-cap from the course plan also applies cumulatively across retries.
 
 `Budget` uses the pinned Broker's Store protocol: `SQLiteStore` is for local offline
