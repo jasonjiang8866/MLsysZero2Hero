@@ -71,6 +71,19 @@ def collect(
                 if len(data) > limit:
                     raise ProviderError("result_too_large")
 
+    def read_result(path: str, limit: int) -> bytes:
+        stage = path.rsplit("/", 1)[-1].removesuffix(".json")
+        for attempt in range(4):
+            try:
+                return read(path, limit)
+            except HTTPError as exc:
+                status = exc.code
+                exc.close()
+                if status not in {404, 429, 500, 502, 503, 504} or attempt == 3:
+                    raise ProviderError(f"result_{stage}_http_{status}") from None
+                sleep(min(2**attempt, remaining()))
+        raise AssertionError("unreachable")
+
     staging: Path | None = None
     try:
         while True:
@@ -98,7 +111,7 @@ def collect(
                 if value["phase"] == "ready":
                     break
             sleep(min(1, remaining()))
-        envelope_raw = read("/v1/manifest", 65536)
+        envelope_raw = read_result("/v1/manifest", 65536)
         envelope = ExportManifest.model_validate_json(envelope_raw)
         if envelope.runtime != runtime or set(envelope.bundle.files) != {
             "metrics.json",
@@ -108,7 +121,7 @@ def collect(
         destination.parent.mkdir(parents=True, exist_ok=True)
         staging = Path(tempfile.mkdtemp(prefix=".e00-collect-", dir=destination.parent))
         for name, metadata in envelope.bundle.files.items():
-            data = read("/v1/files/" + name, metadata.bytes)
+            data = read_result("/v1/files/" + name, metadata.bytes)
             with (staging / name).open("xb") as output:
                 output.write(data)
                 output.flush()

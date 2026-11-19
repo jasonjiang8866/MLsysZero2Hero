@@ -87,7 +87,7 @@ def test_failed_collection_never_publishes(source, runtime, tmp_path, kind):
             value["bundle"]["source_sha"] = "c" * 40
         reader.payloads["/v1/manifest"] = json.dumps(value).encode()
     with pytest.raises(ProviderError):
-        transport.collect(runtime, reader, tmp_path / "saved")
+        transport.collect(runtime, reader, tmp_path / "saved", sleep=lambda _: None)
     assert not (tmp_path / "saved").exists()
     assert not list(tmp_path.glob(".e00-collect-*"))
 
@@ -244,3 +244,20 @@ def test_stream_timeout_leaves_no_published_bundle(source, runtime, tmp_path):
         transport.collect(runtime, reader, tmp_path / "saved")
     assert not (tmp_path / "saved").exists()
     assert not list(tmp_path.glob(".e00-collect-*"))
+
+
+@pytest.mark.parametrize("path", ["/v1/manifest", "/v1/files/output.json"])
+def test_transient_result_http_retries_only_the_affected_file(source, runtime, tmp_path, path):
+    reader = Reader(runtime, worker.export(source, runtime))
+    reader.payloads[path] = [HTTPError("hidden", 502, "", {}, None), reader.payloads[path]]
+    transport.collect(runtime, reader, tmp_path / "saved", sleep=lambda _: None)
+    assert reader.calls.count(path) == 2
+    assert reader.calls.count("/v1/status") == 1
+
+
+def test_result_auth_failure_names_stage_and_status_without_retry(source, runtime, tmp_path):
+    reader = Reader(runtime, worker.export(source, runtime))
+    reader.payloads["/v1/manifest"] = HTTPError("hidden", 403, "", {}, None)
+    with pytest.raises(ProviderError, match="result_manifest_http_403"):
+        transport.collect(runtime, reader, tmp_path / "saved")
+    assert reader.calls.count("/v1/manifest") == 1
