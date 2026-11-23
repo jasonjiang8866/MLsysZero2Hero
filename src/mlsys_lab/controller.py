@@ -17,6 +17,7 @@ from runpod_ci_broker.live import CreateHTTPError, LiveAPI
 from runpod_ci_broker.planner import reasons
 from runpod_ci_broker.provider import ProviderError, ReadOnlyRunPod
 
+from . import e01_hosted
 from .artifact import github_json, uploaded_artifact
 from .budget import CAMPAIGN, REPOSITORY, Budget, Quote
 from .cleanup import Allocation, cleanup_owned, matches
@@ -30,11 +31,14 @@ def digest(raw):
 
 
 class Journal:
-    def __init__(self, store, run, attempt):
+    def __init__(self, store, run, attempt, experiment="E00"):
+        if experiment not in {"E00", "E01"}:
+            raise ValueError("unknown_experiment")
+        self.experiment = experiment
         if not all(re.fullmatch(r"[1-9][0-9]{0,18}", value) for value in (run, attempt)):
             raise ValueError("invalid_run_identity")
         self.run, self.number = run, int(attempt)
-        self.attempt = f"E00-{run}-{attempt}"
+        self.attempt = f"{experiment}-{run}-{attempt}"
         self.key = hashlib.sha256(f"{REPOSITORY}:{CAMPAIGN}:{self.attempt}".encode()).hexdigest()
         self.store, self.budget = store, Budget(store)
         self.version, self.record = store.read(self.key)
@@ -119,9 +123,15 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
         storage_micro_usd_per_pod_hour=disk_rate,
         extras_micro_usd=extras,
         gpu_count=1,
-        wall_seconds=600,
+        wall_seconds=1200 if j.experiment == "E01" else 600,
     )
-    job = Job(attempt=j.attempt, source_sha=source, image_digest=image, gpu=chosen.gpu_id)
+    job = Job(
+        experiment=j.experiment,
+        attempt=j.attempt,
+        source_sha=source,
+        image_digest=image,
+        gpu=chosen.gpu_id,
+    )
     centers = sorted(
         {
             r.data_center
@@ -133,7 +143,7 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
         job=job.model_dump(), center=chosen.data_center, eligible_centers=centers, phase="prepared"
     )
     j.budget.reserve(
-        j.attempt, "E00", quote, now=time.time(), source_sha=source, image_digest=image
+        j.attempt, j.experiment, quote, now=time.time(), source_sha=source, image_digest=image
     )
     # The deterministic name and owner markers are independent of the future Pod ID.
     intent = j.allocation("pending")
@@ -156,6 +166,8 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
             "MLS_RESULT_TOKEN": token,
         },
     }
+    if j.experiment == "E01":
+        body.update(e01_hosted.launch_options(image))
     j.save(phase="create_intent", started=time.time())
     try:
         pod_id = api.create(body)
@@ -178,7 +190,12 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
     j.save(hourly_cost=cost)
     if cost > (rate + disk_rate) / 1e6:
         raise ValueError("allocated_rate_exceeded")
-    collect(j.trusted().runtime, RunPodResultReader(pod_id, 8000, token), output, timeout=240)
+    collect(
+        j.trusted().runtime,
+        RunPodResultReader(pod_id, 8000, token),
+        output,
+        timeout=900 if j.experiment == "E01" else 240,
+    )
     j.save(phase="collected", manifest_digest=digest((output / "manifest.json").read_bytes()))
 
 
@@ -266,8 +283,13 @@ def main():
     try:
         if env["GITHUB_REPOSITORY"] != REPOSITORY or env["GITHUB_REF"] != "refs/heads/main":
             raise ValueError("trusted_main_required")
-        j = Journal(GitHubContentsStore(REPOSITORY), env["OWNER_RUN"], env["OWNER_ATTEMPT"])
-        output = Path("out/e00-bundle")
+        j = Journal(
+            GitHubContentsStore(REPOSITORY),
+            env["OWNER_RUN"],
+            env["OWNER_ATTEMPT"],
+            env.get("COURSE_EXPERIMENT", "E00"),
+        )
+        output = Path("out") / f"{j.experiment.lower()}-bundle"
         if action == "launch":
             launch(
                 j,

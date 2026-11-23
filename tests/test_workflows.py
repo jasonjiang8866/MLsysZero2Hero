@@ -65,3 +65,15 @@ def test_build_has_no_secrets_and_publication_is_manual_main_only():
     text = (ROOT / ".github/workflows/publish-worker.yml").read_text()
     assert "RUNPOD_API_KEY" not in text
     assert "docker pull" in text and "SOURCE_SHA" in text
+
+
+def test_e01_manual_launch_and_owner_recovery():
+    launch = workflow("e01.yml")
+    assert set(launch["on"]) == {"workflow_dispatch"}
+    job = launch["jobs"]["e01"]
+    assert "inputs.confirm_paid" in job["if"] and "refs/heads/main" in job["if"]
+    assert job["env"]["COURSE_EXPERIMENT"] == "E01"
+    assert "always()" in job["steps"][-1]["if"]
+    recover = workflow("e01-recover.yml")
+    assert recover["on"]["workflow_run"]["workflows"] == [launch["name"]]
+    assert ".github/workflows/e01.yml" in recover["jobs"]["recover"]["if"]

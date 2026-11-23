@@ -131,3 +131,17 @@ def test_single_create_offers_only_eligible_equally_priced_centers(setup):
     assert (
         api.pod["dataCenterIds"] == journal.record["eligible_centers"] == ["another-dc", "test-dc"]
     )
+
+
+def test_e01_uses_course_budget_and_exact_worker(setup):
+    store, api, output = setup
+    j = c.Journal(store, "123", "1", "E01")
+    c.launch(j, api, ReadOnlyFake(), SHA, c.e01_hosted.IMAGE_DIGEST, output, 5000, 10000)
+    reserve = j.budget.load()[1].reservations["E01-123-1"]
+    assert reserve.experiment == "E01" and reserve.gpu_seconds == 1200
+    assert api.pod["image"] == "pytorch/pytorch@" + c.e01_hosted.IMAGE_DIGEST
+    assert api.pod["disk"] == 30 and api.pod["mounts"] == {}
+    assert api.pod["gpu"]["minCudaVersion"] == "12.8"
+    assert not c.Journal(store, "123", "1").record
+    assert c.recover(c.Journal(store, "123", "1", "E01"), api) == "rejected"
+    assert api.pod is None

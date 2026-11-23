@@ -1,0 +1,81 @@
+name: Course E01 GPU traces
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_paid:
+        description: Run one single-GPU E01 attempt within the course ledger
+        type: boolean
+        default: false
+      disk_micro_usd_hour:
+        description: Verified upper price per hour for the entire 30 GB temporary disk, in micro-USD
+        type: string
+        required: true
+        default: '5000'
+      extras_micro_usd:
+        description: Verified upper bound for transfer and request charges per attempt, in micro-USD
+        type: string
+        required: true
+        default: '10000'
+permissions:
+  contents: read
+concurrency:
+  group: course-e00-controller
+  cancel-in-progress: false
+jobs:
+  e01:
+    if: github.repository == 'jasonjiang8866/MLsysZero2Hero' && github.ref == 'refs/heads/main' && inputs.confirm_paid
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    permissions:
+      contents: write
+      actions: read
+    env:
+      COURSE_EXPERIMENT: E01
+      OWNER_RUN: ${{ github.run_id }}
+      OWNER_ATTEMPT: ${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+        with:
+          version: '0.13.5'
+          enable-cache: false
+      - run: uv sync --locked --no-dev --python 3.12
+      - name: Verify pinned public PyTorch image
+        id: image
+        run: |
+          set -euo pipefail
+          digest=$(uv run --locked --no-sync python -c 'from mlsys_lab.e01_hosted import IMAGE_DIGEST; print(IMAGE_DIGEST)')
+          docker buildx imagetools inspect "pytorch/pytorch@$digest" >/dev/null
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Reserve budget, create once, collect verified results
+        id: launch
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          RCB_LEDGER_TOKEN: ${{ github.token }}
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          DISK_MICRO_USD_HOUR: ${{ inputs.disk_micro_usd_hour }}
+          EXTRAS_MICRO_USD: ${{ inputs.extras_micro_usd }}
+        run: uv run --locked --no-sync python -m mlsys_lab.controller launch
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: bundle
+        timeout-minutes: 1
+        with:
+          name: E01-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/e01-bundle/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Verify GitHub artifact receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RCB_LEDGER_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.bundle.outputs.artifact-id }}
+          ARCHIVE_DIGEST: ${{ steps.bundle.outputs.artifact-digest }}
+        run: uv run --locked --no-sync python -m mlsys_lab.controller receipt
+      - name: Verify deletion and settle budget
+        if: always() && steps.launch.outcome != 'skipped'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          RCB_LEDGER_TOKEN: ${{ github.token }}
+        run: uv run --locked --no-sync python -m mlsys_lab.controller cleanup

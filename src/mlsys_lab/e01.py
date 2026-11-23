@@ -1,6 +1,7 @@
 """E01 single-GPU timing and starvation lab. Run in an existing CUDA PyTorch environment."""
 
 import argparse
+import hashlib
 import json
 import platform
 import statistics
@@ -53,6 +54,7 @@ def run(output):
     x = host.to(device)
     y = torch.empty((STEPS, SIZE), device=device)
     expected = torch.stack([host + step for step in range(STEPS)])
+    output_digest = hashlib.sha256(expected.numpy().tobytes()).hexdigest()
     rows = list(y.unbind())
     parts = [row.chunk(CHUNKS) for row in rows]
     inputs = x.chunk(CHUNKS)
@@ -79,8 +81,10 @@ def run(output):
         torch.cuda.synchronize(device)
 
     def check():
-        if not torch.equal(y.cpu(), expected):
+        actual = y.cpu()
+        if not torch.equal(actual, expected):
             raise ValueError("E01 FP32 output differs from the CPU reference.")
+        return actual
 
     samples = {case: [] for case in CASES}
     start = torch.cuda.Event(enable_timing=True)
@@ -119,7 +123,7 @@ def run(output):
         with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
             batch(case, annotated=True)
             torch.cuda.synchronize(device)
-        check()
+        observed_digest = hashlib.sha256(check().numpy().tobytes()).hexdigest()
         trace = output / f"{case}.json"
         prof.export_chrome_trace(str(trace))
         timeline = kernel_timeline(json.loads(trace.read_text())["traceEvents"])
@@ -127,6 +131,7 @@ def run(output):
         wall = statistics.median(s["wall_ms"] for s in timings)
         results[case] = {
             "samples": timings,
+            "output_sha256": observed_digest,
             "median_wall_ms": wall,
             "steps_per_second": STEPS * 1000 / wall,
             "trace": trace.name,
@@ -134,6 +139,10 @@ def run(output):
         }
     report = {
         "experiment": "E01",
+        "reference_sha256": output_digest,
+        "input_sha256": hashlib.sha256(host.numpy().tobytes()).hexdigest(),
+        "device_count": torch.cuda.device_count(),
+        "device_memory_bytes": torch.cuda.get_device_properties(device).total_memory,
         "torch": str(torch.__version__),
         "cuda": torch.version.cuda,
         "python": platform.python_version(),
