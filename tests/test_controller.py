@@ -53,6 +53,8 @@ def setup(tmp_path, monkeypatch):
     def collect(runtime, reader, path, timeout):
         path.mkdir()
         (path / "manifest.json").write_text("fixture manifest")
+        if runtime.job.experiment == "E01":
+            (path / "summary.json").write_text('{"results": {}}')
 
     monkeypatch.setattr(c, "collect", collect)
     return store, API(), output

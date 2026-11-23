@@ -7,6 +7,7 @@ import math
 import os
 import re
 import secrets
+import statistics
 import time
 from decimal import ROUND_CEILING, Decimal
 from pathlib import Path
@@ -196,7 +197,33 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
         output,
         timeout=900 if j.experiment == "E01" else 240,
     )
-    j.save(phase="collected", manifest_digest=digest((output / "manifest.json").read_bytes()))
+    evidence = {}
+    if j.experiment == "E01":
+        summary = json.loads((output / "summary.json").read_bytes())
+        evidence["trace_summary"] = {
+            case: {
+                **{
+                    k: row[k]
+                    for k in (
+                        "kernels",
+                        "median_wall_ms",
+                        "kernel_active_us",
+                        "inter_kernel_gap_us",
+                        "longest_gap_us",
+                        "output_sha256",
+                    )
+                },
+                "median_host_cpu_ms": statistics.median(
+                    s["host_thread_cpu_ms"] for s in row["samples"]
+                ),
+            }
+            for case, row in summary["results"].items()
+        }
+    j.save(
+        phase="collected",
+        manifest_digest=digest((output / "manifest.json").read_bytes()),
+        **evidence,
+    )
 
 
 def receipt(j, artifact, identifier, archive_digest, output):

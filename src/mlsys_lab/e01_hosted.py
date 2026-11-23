@@ -119,3 +119,27 @@ def verify(root, envelope):
         median = statistics.median(s["wall_ms"] for s in samples)
         if row["median_wall_ms"] != median or row["steps_per_second"] != STEPS * 1000 / median:
             raise ValueError("e01_median_invalid")
+
+
+def unpack(raw, root, runtime):
+    """Allow only the five expected data files and their runtime-bound manifest."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as bundle:
+            names = bundle.namelist()
+            if len(names) != 6 or set(names) != FILES | {"manifest.json"}:
+                raise ValueError("e01_archive_files_invalid")
+            if bundle.getinfo("manifest.json").file_size > 65536:
+                raise ValueError("e01_manifest_too_large")
+            manifest = bundle.read("manifest.json")
+            envelope = TraceExport.model_validate_json(manifest)
+            if envelope.runtime != runtime or set(envelope.files) != FILES:
+                raise ValueError("export_identity_invalid")
+            for name, metadata in envelope.files.items():
+                if bundle.getinfo(name).file_size != metadata.bytes:
+                    raise ValueError("e01_archive_size_mismatch")
+                (root / name).write_bytes(bundle.read(name))
+    except zipfile.BadZipFile as exc:
+        raise ValueError("e01_invalid_zip") from exc
+    verify(root, envelope)
+    (root / "manifest.json").write_bytes(manifest)
+    return manifest

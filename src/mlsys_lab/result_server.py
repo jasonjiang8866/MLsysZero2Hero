@@ -21,7 +21,7 @@ class State:
 
     def response(self, path: str, runtime) -> tuple[int, bytes]:
         with self._lock:
-            if path == "/v1/status":
+            if path == "/v1/status" and path not in self._payloads:
                 return 200, json.dumps(
                     {"phase": self._phase, "runtime_fingerprint": runtime.fingerprint()}
                 ).encode()
@@ -51,7 +51,10 @@ def server(runtime, state: State, token: str, address: tuple[str, int]) -> HTTPS
             else:
                 status, data = state.response(self.path, runtime)
             self.send_response(status)
-            self.send_header("Content-Type", "application/json")
+            self.send_header(
+                "Content-Type",
+                "application/zip" if data.startswith(b"PK\x03\x04") else "application/json",
+            )
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()

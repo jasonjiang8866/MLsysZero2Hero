@@ -58,3 +58,38 @@ def test_four_trace_acceptance_rejects_swapped_profiles(tmp_path):
     payload["host_cpu.json"] = payload["io_wait.json"]
     with pytest.raises(ValueError, match="trace_mismatch"):
         check()
+
+
+def test_ready_response_transfers_whole_archive_without_followup(tmp_path, monkeypatch):
+    import io
+    import zipfile
+
+    from mlsys_lab.transport import collect
+    from mlsys_lab.worker import Job, Runtime
+
+    job = Job(
+        experiment="E01",
+        attempt="E01-1-1",
+        source_sha="a" * 40,
+        image_digest=e01_hosted.IMAGE_DIGEST,
+        gpu="NVIDIA GeForce RTX 4090",
+    )
+    runtime = Runtime(job=job, pod_id="pod1")
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w") as z:
+        files = {}
+        for name in e01_hosted.FILES:
+            raw = b"{}"
+            z.writestr(name, raw)
+            files[name] = dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+        z.writestr("manifest.json", json.dumps(dict(runtime=runtime.model_dump(), files=files)))
+
+    class Reader:
+        def open(self, path, timeout):
+            assert path == "/v1/status"
+            return io.BytesIO(archive.getvalue())
+
+    monkeypatch.setattr(e01_hosted, "verify", lambda root, manifest: None)
+    dest = tmp_path / "collected"
+    collect(runtime, Reader(), dest)
+    assert {p.name for p in dest.iterdir()} == e01_hosted.FILES | {"manifest.json", "transfer.json"}
