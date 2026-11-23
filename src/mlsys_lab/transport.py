@@ -85,12 +85,16 @@ def collect(
                 sleep(min(2**attempt, remaining()))
         raise AssertionError("unreachable")
 
+    is_e01 = runtime.job.experiment == "E01"
     staging: Path | None = None
     try:
         while True:
             remaining()
             try:
-                value = json.loads(read("/v1/status", 4096))
+                raw = read("/v1/status", 32 * 1024**2 if is_e01 else 4096)
+                if is_e01 and raw.startswith(b"PK\x03\x04"):
+                    break
+                value = json.loads(raw)
             except HTTPError as exc:
                 code = exc.code
                 exc.close()
@@ -110,32 +114,28 @@ def collect(
                 if value["phase"] == "failed":
                     raise ProviderError("worker_failed")
                 if value["phase"] == "ready":
+                    if is_e01:
+                        raise ProviderError("e01_ready_without_archive")
                     break
             sleep(min(1, remaining()))
-        envelope_raw = read_result("/v1/manifest", 65536)
-        is_e01 = runtime.job.experiment == "E01"
-        if is_e01:
-            envelope = e01_hosted.TraceExport.model_validate_json(envelope_raw)
-            files = envelope.files
-            expected = e01_hosted.FILES
-        else:
-            envelope = ExportManifest.model_validate_json(envelope_raw)
-            files = envelope.bundle.files
-            expected = {"metrics.json", "output.json"}
-        if envelope.runtime != runtime or set(files) != expected:
-            raise ProviderError("export_identity_invalid")
         destination.parent.mkdir(parents=True, exist_ok=True)
         staging = Path(tempfile.mkdtemp(prefix=".course-collect-", dir=destination.parent))
-        for name, metadata in files.items():
-            data = read_result("/v1/files/" + name, metadata.bytes)
-            with (staging / name).open("xb") as output:
-                output.write(data)
-                output.flush()
-                os.fsync(output.fileno())
         if is_e01:
-            e01_hosted.verify(staging, envelope)
-            (staging / "manifest.json").write_bytes(envelope_raw)
+            envelope_raw = e01_hosted.unpack(raw, staging, runtime)
         else:
+            envelope_raw = read_result("/v1/manifest", 65536)
+            envelope = ExportManifest.model_validate_json(envelope_raw)
+            if envelope.runtime != runtime or set(envelope.bundle.files) != {
+                "metrics.json",
+                "output.json",
+            }:
+                raise ProviderError("export_identity_invalid")
+            for name, metadata in envelope.bundle.files.items():
+                data = read_result("/v1/files/" + name, metadata.bytes)
+                with (staging / name).open("xb") as output:
+                    output.write(data)
+                    output.flush()
+                    os.fsync(output.fileno())
             (staging / "manifest.json").write_text(envelope.bundle.model_dump_json(indent=2) + "\n")
             admit(staging, runtime)
         (staging / "transfer.json").write_bytes(envelope_raw)

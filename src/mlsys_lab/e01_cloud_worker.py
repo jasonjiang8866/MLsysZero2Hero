@@ -1,12 +1,14 @@
 """Run the locked course workload inside the public PyTorch image."""
 
 import hashlib
+import io
 import json
 import os
 import subprocess
 import sys
 import threading
 import time
+import zipfile
 from pathlib import Path
 
 from .e01 import CASES
@@ -37,17 +39,20 @@ def main():
                 timeout=120,
                 check=True,
             )
-            files = {}
+            archive = io.BytesIO()
             metadata = {}
-            for name in ["summary.json", *(f"{case}.json" for case in CASES)]:
-                path = root / name
-                if path.stat().st_size > 32 * 1024**2:
-                    raise ValueError("trace_too_large")
-                raw = path.read_bytes()
-                files["/v1/files/" + name] = raw
-                metadata[name] = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
-            files["/v1/manifest"] = json.dumps({"runtime": runtime, "files": metadata}).encode()
-            state.update("ready", files)
+            with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+                for name in ["summary.json", *(f"{case}.json" for case in CASES)]:
+                    path = root / name
+                    if path.stat().st_size > 32 * 1024**2:
+                        raise ValueError("trace_too_large")
+                    raw = path.read_bytes()
+                    bundle.writestr(name, raw)
+                    metadata[name] = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+                bundle.writestr(
+                    "manifest.json", json.dumps({"runtime": runtime, "files": metadata})
+                )
+            state.update("ready", {"/v1/status": archive.getvalue()})
         except (ValueError, OSError, subprocess.SubprocessError):
             state.update("failed")
 
