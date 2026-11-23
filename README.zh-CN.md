@@ -6,7 +6,7 @@
 
 “Zero”指零系统优化经验。先修要求：Python、PyTorch tensor/autograd、基本线性代数、Linux 和 Git；kernel 路线补充 C++/CUDA 基础。
 
-**动手实验。** [E00 已在 RTX 4090 上通过端到端验收](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041)。下一课 [E01 · GPU 在等什么？](lessons/e01/README.zh-CN.md) 用单卡对比主机供数延迟与小算子启动开销。讲义和实验程序可在本地使用，课程托管的 E01 真机验收待完成。
+**动手实验。** [E00 已在 RTX 4090 上通过端到端验收](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041)。下一课 [E01 · GPU 在等什么？](lessons/e01/README.zh-CN.md) 用单卡对比主机供数延迟与小算子启动开销。讲义和实验程序可在本地使用，[四组 RTX 4090 原始 trace 和诊断结果](docs/results/e01-45288496471.md)已可离线复查。
 
 ## 从一个问题开始
 

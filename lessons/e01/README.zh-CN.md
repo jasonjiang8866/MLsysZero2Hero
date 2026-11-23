@@ -2,6 +2,8 @@
 
 [English](README.md) · [课程表](../../docs/curriculum.md)
 
+[查看 RTX 4090 原始 trace 与实测解读](../../docs/results/e01-45288496471.md)
+
 训练吞吐下降，监控面板显示 GPU 利用率偏低。你会先改数据管线，还是先合并小算子？这节 L01–L02 实验让你亲手制造两种外观相似的供数延迟，再用相同的计算量观察过多 kernel launch 的影响。
 
 ## 运行
