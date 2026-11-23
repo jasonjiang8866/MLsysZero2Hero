@@ -16,6 +16,7 @@ from urllib.error import HTTPError, URLError
 from runpod_ci_broker.export import Reader, RunPodResultReader
 from runpod_ci_broker.provider import ProviderError
 
+from . import e01_hosted
 from .worker import ExportManifest, Runtime, admit
 
 
@@ -43,7 +44,7 @@ def collect(
     now: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
 ) -> None:
-    if not 0 < timeout <= 300:
+    if not 0 < timeout <= (900 if runtime.job.experiment == "E01" else 300):
         raise ValueError("collection_timeout_invalid")
     if destination.exists() or destination.is_symlink():
         raise ValueError("destination_exists")
@@ -112,23 +113,31 @@ def collect(
                     break
             sleep(min(1, remaining()))
         envelope_raw = read_result("/v1/manifest", 65536)
-        envelope = ExportManifest.model_validate_json(envelope_raw)
-        if envelope.runtime != runtime or set(envelope.bundle.files) != {
-            "metrics.json",
-            "output.json",
-        }:
+        is_e01 = runtime.job.experiment == "E01"
+        if is_e01:
+            envelope = e01_hosted.TraceExport.model_validate_json(envelope_raw)
+            files = envelope.files
+            expected = e01_hosted.FILES
+        else:
+            envelope = ExportManifest.model_validate_json(envelope_raw)
+            files = envelope.bundle.files
+            expected = {"metrics.json", "output.json"}
+        if envelope.runtime != runtime or set(files) != expected:
             raise ProviderError("export_identity_invalid")
         destination.parent.mkdir(parents=True, exist_ok=True)
-        staging = Path(tempfile.mkdtemp(prefix=".e00-collect-", dir=destination.parent))
-        for name, metadata in envelope.bundle.files.items():
+        staging = Path(tempfile.mkdtemp(prefix=".course-collect-", dir=destination.parent))
+        for name, metadata in files.items():
             data = read_result("/v1/files/" + name, metadata.bytes)
             with (staging / name).open("xb") as output:
                 output.write(data)
                 output.flush()
                 os.fsync(output.fileno())
-        (staging / "manifest.json").write_text(envelope.bundle.model_dump_json(indent=2) + "\n")
-        # Recompute numerical results, file hashes and selected-device admission.
-        admit(staging, runtime)
+        if is_e01:
+            e01_hosted.verify(staging, envelope)
+            (staging / "manifest.json").write_bytes(envelope_raw)
+        else:
+            (staging / "manifest.json").write_text(envelope.bundle.model_dump_json(indent=2) + "\n")
+            admit(staging, runtime)
         (staging / "transfer.json").write_bytes(envelope_raw)
         for name in ("manifest.json", "transfer.json"):
             with (staging / name).open("rb") as handle:

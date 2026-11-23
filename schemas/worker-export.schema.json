@@ -38,8 +38,11 @@
           "type": "string"
         },
         "experiment": {
-          "const": "E00",
           "default": "E00",
+          "enum": [
+            "E00",
+            "E01"
+          ],
           "title": "Experiment",
           "type": "string"
         },

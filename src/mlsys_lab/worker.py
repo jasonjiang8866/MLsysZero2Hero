@@ -4,20 +4,18 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import hmac
 import json
 import os
 import subprocess
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import Field
-from runpod_ci_broker.export import capability_valid
 
 from .cli import run_smoke
+from .result_server import State, server
 from .results import SHA, Manifest, Strict, bounded, payloads, verify
 
 IMAGE = "ghcr.io/jasonjiang8866/mlsyszero2hero-worker@"
@@ -32,7 +30,7 @@ GPU = Literal[
 class Job(Strict):
     schema_version: Literal[1] = 1
     repository: Literal["jasonjiang8866/MLsysZero2Hero"] = "jasonjiang8866/MLsysZero2Hero"
-    experiment: Literal["E00"] = "E00"
+    experiment: Literal["E00", "E01"] = "E00"
     attempt: Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")]
     source_sha: SHA
     image_digest: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
@@ -42,6 +40,8 @@ class Job(Strict):
 
     @property
     def image(self) -> str:
+        if self.experiment == "E01":
+            return "pytorch/pytorch@" + self.image_digest
         return IMAGE + self.image_digest
 
 
@@ -74,62 +74,6 @@ def export(root: Path, runtime: Runtime) -> dict[str, bytes]:
         "/v1/manifest": envelope.model_dump_json().encode(),
         **{"/v1/files/" + k: v for k, v in payloads(root).items()},
     }
-
-
-class State:
-    """Publish phase and immutable payloads together under a lock."""
-
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._phase = "starting"
-        self._payloads: dict[str, bytes] = {}
-
-    def update(self, phase: str, files: dict[str, bytes] | None = None) -> None:
-        with self._lock:
-            self._phase, self._payloads = phase, files or {}
-
-    def response(self, path: str, runtime: Runtime) -> tuple[int, bytes]:
-        with self._lock:
-            if path == "/v1/status":
-                return 200, json.dumps(
-                    {"phase": self._phase, "runtime_fingerprint": runtime.fingerprint()}
-                ).encode()
-            if self._phase != "ready":
-                return 503, b"{}"
-            data = self._payloads.get(path)
-            return (200, data) if data is not None else (404, b"{}")
-
-
-def server(runtime: Runtime, state: State, token: str, address: tuple[str, int]) -> HTTPServer:
-    if not capability_valid(token):
-        raise ValueError("result_capability_invalid")
-
-    class Handler(BaseHTTPRequestHandler):
-        def setup(self):
-            super().setup()
-            self.connection.settimeout(2)
-
-        def log_message(self, *_args):
-            pass  # Headers, tokens and raw paths never enter logs.
-
-        def do_GET(self):
-            if not hmac.compare_digest(
-                self.headers.get("Authorization", "").encode(), ("Bearer " + token).encode()
-            ):
-                status, data = 401, b"{}"
-            else:
-                status, data = state.response(self.path, runtime)
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            try:
-                self.wfile.write(data)
-            except (OSError, TimeoutError):
-                pass
-
-    return HTTPServer(address, Handler)
 
 
 def compute(runtime: Runtime, root: Path, build_sha: str, state: State) -> None:
