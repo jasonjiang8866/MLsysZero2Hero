@@ -6,7 +6,7 @@
 
 “Zero”指零系统优化经验。先修要求：Python、PyTorch tensor/autograd、基本线性代数、Linux 和 Git；kernel 路线补充 C++/CUDA 基础。
 
-**当前状态：M1 实验底座开发中。** 已实现有时限的 CUDA kernel smoke 命令、结果验证、预算预留及只读 RunPod 查询。CPU 测试不代表真实 GPU 验收，付费生命周期接入和完整课程仍待完成。见[实验底座](docs/lab-platform.zh-CN.md)。
+**动手实验。** [E00 已在 RTX 4090 上通过端到端验收](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041)。下一课 [E01 · GPU 在等什么？](lessons/e01/README.zh-CN.md) 用单卡对比主机供数延迟与小算子启动开销。讲义和实验程序可在本地使用，课程托管的 E01 真机验收待完成。
 
 ## 从一个问题开始
 
