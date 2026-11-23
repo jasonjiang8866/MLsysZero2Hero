@@ -2,6 +2,8 @@
 
 [简体中文](README.zh-CN.md) · [Curriculum](../../docs/curriculum.md)
 
+[Study the measured RTX 4090 traces and worked diagnosis](../../docs/results/e01-45288496471.md)
+
 You own a training loop whose throughput has dropped. A dashboard shows low GPU utilization. What measurement would tell you whether to work on the input pipeline or the kernels? This L01–L02 lab gives you two host delays that can produce similar GPU timelines, plus a launch-bound workload with exactly the same arithmetic.
 
 ## Run the experiment
