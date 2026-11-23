@@ -29,9 +29,12 @@ def test_four_trace_acceptance_rejects_swapped_profiles(tmp_path):
     for case in e01.CASES:
         n = e01.STEPS * (e01.CHUNKS if case == "small_launches" else 1)
         events = [{"ph": "X", "cat": "kernel", "ts": i * 2, "dur": 1} for i in range(n)]
-        events += [{"ph": "X", "name": case + "/step"}] * e01.STEPS
+        events += [{"ph": "X", "cat": "user_annotation", "name": case + "/step"}] * e01.STEPS
         if case in {"host_cpu", "io_wait"}:
-            events += [{"ph": "X", "name": case + "/producer"}] * e01.STEPS
+            events += [
+                {"ph": "X", "cat": "user_annotation", "name": case + "/producer"}
+            ] * e01.STEPS
+        events += [{"ph": "X", "cat": "gpu_user_annotation", "name": case + "/step"}] * e01.STEPS
         payload[case + ".json"] = json.dumps({"traceEvents": events}).encode()
         sample = dict.fromkeys(
             ["host_submit_ms", "wall_ms", "host_thread_cpu_ms", "stream_span_ms"], 1

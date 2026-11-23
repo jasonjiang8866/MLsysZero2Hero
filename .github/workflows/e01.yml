@@ -66,6 +66,13 @@ jobs:
           path: out/e01-bundle/
           if-no-files-found: error
           retention-days: 30
+      - name: Keep retrieved traces for CPU diagnosis if verification failed
+        if: failure() && steps.launch.outcome == 'failure' && hashFiles('out/e01-diagnostic/manifest.json') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: E01-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/e01-diagnostic/
+          retention-days: 7
       - name: Verify GitHub artifact receipt
         env:
           GH_TOKEN: ${{ github.token }}

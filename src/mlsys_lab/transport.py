@@ -94,7 +94,13 @@ def collect(
                 raw = read("/v1/status", 32 * 1024**2 if is_e01 else 4096)
                 if is_e01 and raw.startswith(b"PK\x03\x04"):
                     break
-                value = json.loads(raw)
+                try:
+                    value = json.loads(raw)
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    if not is_e01:
+                        raise
+                    # A proxy can briefly serve a non-worker response during startup.
+                    value = None
             except HTTPError as exc:
                 code = exc.code
                 exc.close()
@@ -121,7 +127,27 @@ def collect(
         destination.parent.mkdir(parents=True, exist_ok=True)
         staging = Path(tempfile.mkdtemp(prefix=".course-collect-", dir=destination.parent))
         if is_e01:
-            envelope_raw = e01_hosted.unpack(raw, staging, runtime)
+            try:
+                envelope_raw = e01_hosted.unpack(raw, staging, runtime)
+            except (ValueError, KeyError, TypeError) as exc:
+                # Preserve only known files after validating archive membership and run identity.
+                if (staging / "manifest.json").is_file():
+                    publish(staging, destination.with_name("e01-diagnostic"))
+                code = str(exc)
+                if code in {
+                    "e01_summary_mismatch",
+                    "e01_trace_mismatch",
+                    "e01_timing_invalid",
+                    "e01_median_invalid",
+                    "e01_file_hash_mismatch",
+                    "e01_invalid_zip",
+                    "e01_archive_files_invalid",
+                    "e01_manifest_too_large",
+                    "export_identity_invalid",
+                    "e01_archive_size_mismatch",
+                }:
+                    raise ProviderError(code) from None
+                raise ProviderError("e01_archive_invalid") from None
         else:
             envelope_raw = read_result("/v1/manifest", 65536)
             envelope = ExportManifest.model_validate_json(envelope_raw)

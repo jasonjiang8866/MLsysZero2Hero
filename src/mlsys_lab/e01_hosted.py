@@ -98,7 +98,9 @@ def verify(root, envelope):
         trace = json.loads((root / f"{case}.json").read_bytes())
         events = trace["traceEvents"]
         timeline = kernel_timeline(events)
-        annotations = [e["name"] for e in events if e.get("ph") == "X" and "name" in e]
+        annotations = [
+            e["name"] for e in events if e.get("ph") == "X" and e.get("cat") == "user_annotation"
+        ]
         count = STEPS * (CHUNKS if case == "small_launches" else 1)
         if (
             row["trace"] != f"{case}.json"
@@ -140,6 +142,6 @@ def unpack(raw, root, runtime):
                 (root / name).write_bytes(bundle.read(name))
     except zipfile.BadZipFile as exc:
         raise ValueError("e01_invalid_zip") from exc
-    verify(root, envelope)
     (root / "manifest.json").write_bytes(manifest)
+    verify(root, envelope)
     return manifest
