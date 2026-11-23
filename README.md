@@ -14,7 +14,7 @@ For learners who can already code and train a model. “Zero” means no prior s
 
 Our opening case follows DeepSeek-V3's H800 training system: GPU idle time, expert routing, intra-node/inter-node communication, and computation–communication overlap. Later chapters revisit these questions through small experiments and a detailed case study. R1 extends the story to reinforcement-learning post-training on V3-Base; it is not the source of all V3 infrastructure techniques.
 
-The opening asks questions rather than requiring knowledge of DualPipe or MoE. See the [case-study plan and sources](docs/deepseek-case-study.md).
+[Start L00 · Follow one token across the H800 cluster](lessons/l00/README.md). In 15 minutes, predict dispatch bytes for three expert layouts and test whether halving compute time changes the critical path. Python standard library only.
 
 ## Learning route
 

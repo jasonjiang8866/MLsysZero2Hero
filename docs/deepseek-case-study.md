@@ -2,7 +2,7 @@
 
 [Curriculum / 课表](curriculum.md)
 
-Status: teaching design, not a reproduction of DeepSeek training. / 状态：教学设计，不是 DeepSeek 训练复现。
+Opening lesson: [English](../lessons/l00/README.md) · [中文](../lessons/l00/README.zh-CN.md). The L14 deep dive remains planned. / L00 开场课已可运行，L14 深入复盘待开发。
 
 ## Opening: 10–15 minutes / 开场：10–15 分钟
 
