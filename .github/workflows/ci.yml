@@ -43,3 +43,24 @@ jobs:
           ARTIFACT_ID: ${{ steps.receipt_fixture.outputs.artifact-id }}
           ARCHIVE_DIGEST: ${{ steps.receipt_fixture.outputs.artifact-digest }}
         run: uv run --locked python tests/integration/actions_receipt.py
+  rmsnorm-interpreter:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+        with:
+          version: '0.13.5'
+          enable-cache: false
+      - run: uv sync --locked --python 3.12
+      - name: Install CPU execution dependencies
+        run: |
+          uv pip install 'torch==2.9.0+cpu' --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match
+          uv pip install 'triton==3.5.0' 'numpy<3'
+      - name: Execute RMSNorm kernel on CPU
+        env:
+          TRITON_INTERPRET: '1'
+          OMP_NUM_THREADS: '1'
+        run: .venv/bin/python -m pytest -q tests/test_e02.py

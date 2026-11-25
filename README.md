@@ -6,7 +6,7 @@ A bilingual, experiment-driven path from machine learning development to **ML Sy
 
 For learners who can already code and train a model. “Zero” means no prior systems-optimization experience. Python, PyTorch tensors/autograd, basic linear algebra, Linux and Git are prerequisites; C++/CUDA foundations are taught on the kernel track.
 
-**Start the labs.** [E00 passed on an RTX 4090](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041). In [E01 · Why is the GPU waiting?](lessons/e01/README.md), compare host delays and fragmented launches on one GPU. The lesson and runner are available for local use. [Four RTX 4090 traces and worked diagnosis](docs/results/e01-45288496471.md) are available for offline study.
+**Start the labs.** [E00 passed on an RTX 4090](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041). In [E01 · Why is the GPU waiting?](lessons/e01/README.md), compare host delays and fragmented launches on one GPU. The lesson and runner are available for local use. [Four RTX 4090 traces and worked diagnosis](docs/results/e01-45288496471.md) are available for offline study. Continue with [E02 · Write a fused RMSNorm kernel](lessons/e02/README.md) to implement a forward kernel and compare its accuracy, launch count and latency with eager PyTorch.
 
 ## Start with a question
 
@@ -41,7 +41,7 @@ Experiments are tiered: CPU/reference-trace access; one GPU; 2–4 GPUs; verifie
 
 The owner authorized **US$20 and 1,000 minutes** for this project's initial experiments on 2026-11-16 (Asia/Singapore). We conservatively account time as aggregate allocated GPU-minutes, including startup and retries. The plan keeps all charges within US$20, including temporary storage and cleanup. Cumulative admission logic is implemented and tested offline; the [E00 controller](runpod/e00.md) uses the dedicated course ledger.
 
-The owner reports a RunPod repository secret is configured. Its name, availability and API access remain to be validated safely in Actions. No credential should be pasted into an issue, log or artifact.
+The manual GPU workflows used the configured RunPod credential for E00 and E01. See the [experiment plan and ledger policy](runpod/README.md) for per-experiment limits.
 
 ## License
 

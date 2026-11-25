@@ -9,8 +9,8 @@ The first release is a coherent single-GPU learning path, not a claim that the e
 | Milestone / 里程碑 | Deliverables / 交付 | Exit gate / 验收 | Dependency and status / 依赖与状态 |
 | --- | --- | --- | --- |
 | M0: Course foundation / 课程骨架 | Bilingual entry, L00 case plan, full syllabus, budget/runbook / 双语入口、案例、课表、实验计划 | Links, coverage, budget sums and scope reviewed / 链接、覆盖、预算检查 | Merged in PR #1 / PR #1 已合并 |
-| M1: Reproducible lab platform / 实验底座 | Locked environment, result schema, CPU CI, RunPod quote/preflight controller, cleanup and ledger tests / 环境锁、结果格式、预检、清理、记账 | Offline tests pass; safe secret-presence check; no paid push/PR triggers; then E00 smoke / 离线通过、安全预检后 smoke | M0; foundation implemented, live activation pending / 底座已实现、真实激活待完成 |
-| M2: First learning slice / 首个学习闭环 | L00–L04: bilingual lessons, measurement, idle diagnosis, first kernel exercises and solutions / 开场到算子首个闭环 | E01/E02 artifacts, traces, shape/dtype correctness and explained results / 实测及正确性证据 | M1; planned |
+| M1: Reproducible lab platform / 实验底座 | Locked environment, result schema, CPU CI, RunPod quote/preflight controller, cleanup and ledger tests / 环境锁、结果格式、预检、清理、记账 | Offline tests pass; safe secret-presence check; no paid push/PR triggers; then E00 smoke / 离线通过、安全预检后 smoke | [E00 accepted on RTX 4090 / 真机验收通过](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041) |
+| M2: First learning slice / 首个学习闭环 | L00–L04: bilingual lessons, measurement, idle diagnosis, first kernel exercises and solutions / 开场到算子首个闭环 | E01/E02 artifacts, traces, shape/dtype correctness and explained results / 实测及正确性证据 | L00 published, [E01 accepted / 已验收](results/e01-45288496471.md), [E02 RMSNorm exercise / 前向练习](../lessons/e02/README.md) available; E02 hardware results pending / 待真机实测 |
 | M3: Attention on one GPU / 单卡 Attention | L05–L06, dense/blockwise/optimized comparisons / 分类、分块与优化 | E03 output/gradient checks, memory report; optional E06 small serving extension / 输出梯度与显存证据 | M2; planned |
 | M4: Communication and distributed mechanisms / 通信与分布式机制 | L07/L09 foundations, L10 ring prototype, L11 MoE imbalance / 通信、ring、MoE | E04/E05 only on verified topology; small-scale correctness, scaling/imbalance report / 核实拓扑后实测 | M3; hardware/budget conditional |
 | M5: Cluster and serving depth / 集群与服务深化 | L08/L12/L13, cross-rack networking, serving/RL/reliability case material / 跨机架、服务、RL、可靠性 | Sources and traces attributable; simulations labeled; real T3 runs separately costed / 来源可追溯、模拟明确 | M4; full T3 execution not promised in initial budget |
@@ -18,7 +18,7 @@ The first release is a coherent single-GPU learning path, not a claim that the e
 
 ## M1 implementation status / M1 实现状态
 
-See the [English platform guide](lab-platform.md) and [中文实验底座](lab-platform.zh-CN.md). The foundation implements package/lockfile, CPU CI, PTX kernel smoke, bundle verification, cumulative CAS budget reservations and read-only preflight. The [worker/transport increment](worker-protocol.md) adds a container, authenticated collection and ownership-checked cleanup primitives. The [E00 workflow](../runpod/e00.md) integrates manual launch, durable receipts and independent recovery. Live acceptance is pending. / E00 已接入手动启动、持久回执和独立清理，真实 GPU 验收待运行。
+See the [English platform guide](lab-platform.md) and [中文实验底座](lab-platform.zh-CN.md). The foundation implements package/lockfile, CPU CI, PTX kernel smoke, bundle verification, cumulative CAS budget reservations and read-only preflight. The [worker/transport increment](worker-protocol.md) adds a container, authenticated collection and ownership-checked cleanup primitives. The [E00 workflow](../runpod/e00.md) integrates manual launch, durable receipts and independent recovery. E00 passed end to end on an RTX 4090. / E00 已在 RTX 4090 上通过端到端验收。
 
 ## M1 acceptance contract / M1 验收约定
 
