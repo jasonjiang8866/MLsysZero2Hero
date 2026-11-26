@@ -34,13 +34,16 @@ class TraceExport(Strict):
     files: dict[str, TraceFile]
 
 
-def launch_options(image_digest):
+def launch_options(image_digest, experiment="E01"):
     if image_digest != IMAGE_DIGEST:
         raise ValueError("e01_image_digest_mismatch")
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         bundle.writestr("mlsys_lab/__init__.py", b"")
-        for name in ("e01.py", "e01_cloud_worker.py", "result_server.py"):
+        names = ["e01.py", "e01_cloud_worker.py", "result_server.py"]
+        if experiment == "E02":
+            names.extend(["e02.py", "e02_kernel.py"])
+        for name in names:
             bundle.writestr("mlsys_lab/" + name, Path(__file__).with_name(name).read_bytes())
     encoded = base64.b64encode(buffer.getvalue()).decode()
     # Only these course files travel to the Pod. The bootstrap needs no install or checkout.
@@ -50,6 +53,14 @@ def launch_options(image_digest):
         "os.environ['PYTHONPATH']=p; os.execv(sys.executable,"
         "[sys.executable,'-m','mlsys_lab.e01_cloud_worker'])"
     )
+    if experiment == "E02":
+        # Triton JIT and source hashing require real files rather than zipimport.
+        command = (
+            "import base64,io,os,tempfile,zipfile,sys; p=tempfile.mkdtemp(); "
+            f"zipfile.ZipFile(io.BytesIO(base64.b64decode('{encoded}'))).extractall(p); "
+            "os.environ['PYTHONPATH']=p; os.execv(sys.executable,"
+            "[sys.executable,'-m','mlsys_lab.e01_cloud_worker'])"
+        )
     return {
         "disk": 30,
         "entrypoint": ["/bin/bash", "-lc"],
@@ -125,17 +136,23 @@ def verify(root, envelope):
 
 def unpack(raw, root, runtime):
     """Allow only the five expected data files and their runtime-bound manifest."""
+    from . import e02_hosted
+
+    e02 = runtime.job.experiment == "E02"
+    files = e02_hosted.FILES if e02 else FILES
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as bundle:
             names = bundle.namelist()
-            if len(names) != 6 or set(names) != FILES | {"manifest.json"}:
+            if len(names) != len(files) + 1 or set(names) != files | {"manifest.json"}:
                 raise ValueError("e01_archive_files_invalid")
             if bundle.getinfo("manifest.json").file_size > 65536:
                 raise ValueError("e01_manifest_too_large")
             manifest = bundle.read("manifest.json")
             envelope = TraceExport.model_validate_json(manifest)
-            if envelope.runtime != runtime or set(envelope.files) != FILES:
+            if envelope.runtime != runtime or set(envelope.files) != files:
                 raise ValueError("export_identity_invalid")
+            if sum(f.bytes for f in envelope.files.values()) > 128 * 1024**2:
+                raise ValueError("e01_archive_size_mismatch")
             for name, metadata in envelope.files.items():
                 if bundle.getinfo(name).file_size != metadata.bytes:
                     raise ValueError("e01_archive_size_mismatch")
@@ -143,5 +160,5 @@ def unpack(raw, root, runtime):
     except zipfile.BadZipFile as exc:
         raise ValueError("e01_invalid_zip") from exc
     (root / "manifest.json").write_bytes(manifest)
-    verify(root, envelope)
+    (e02_hosted.verify if e02 else verify)(root, envelope)
     return manifest

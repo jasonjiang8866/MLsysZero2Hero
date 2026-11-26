@@ -33,7 +33,7 @@ def digest(raw):
 
 class Journal:
     def __init__(self, store, run, attempt, experiment="E00"):
-        if experiment not in {"E00", "E01"}:
+        if experiment not in {"E00", "E01", "E02"}:
             raise ValueError("unknown_experiment")
         self.experiment = experiment
         if not all(re.fullmatch(r"[1-9][0-9]{0,18}", value) for value in (run, attempt)):
@@ -124,7 +124,7 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
         storage_micro_usd_per_pod_hour=disk_rate,
         extras_micro_usd=extras,
         gpu_count=1,
-        wall_seconds=1200 if j.experiment == "E01" else 600,
+        wall_seconds=1200 if j.experiment in {"E01", "E02"} else 600,
     )
     job = Job(
         experiment=j.experiment,
@@ -167,8 +167,8 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
             "MLS_RESULT_TOKEN": token,
         },
     }
-    if j.experiment == "E01":
-        body.update(e01_hosted.launch_options(image))
+    if j.experiment in {"E01", "E02"}:
+        body.update(e01_hosted.launch_options(image, j.experiment))
     j.save(phase="create_intent", started=time.time())
     try:
         pod_id = api.create(body)
@@ -195,7 +195,7 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
         j.trusted().runtime,
         RunPodResultReader(pod_id, 8000, token),
         output,
-        timeout=900 if j.experiment == "E01" else 240,
+        timeout=900 if j.experiment in {"E01", "E02"} else 240,
     )
     evidence = {}
     if j.experiment == "E01":
@@ -219,6 +219,16 @@ def launch(j, api, catalog, source, image, output, disk_rate, extras):
             }
             for case, row in summary["results"].items()
         }
+    if j.experiment == "E02":
+        summary = json.loads((output / "summary.json").read_bytes())
+        evidence["rmsnorm_cases"] = [
+            {k: case[k] for k in ("dtype", "shape", "strides")}
+            | {
+                method: {k: result[k] for k in ("median_us", "kernels", "max_abs_error")}
+                for method, result in case["methods"].items()
+            }
+            for case in summary["cases"]
+        ]
     j.save(
         phase="collected",
         manifest_digest=digest((output / "manifest.json").read_bytes()),

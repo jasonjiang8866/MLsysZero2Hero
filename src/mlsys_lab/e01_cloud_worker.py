@@ -32,17 +32,24 @@ def main():
     def compute():
         try:
             state.update("running")
-            root = Path("/tmp/e01-results")
+            experiment = job["experiment"]
+            root = Path("/tmp") / (experiment.lower() + "-results")
+            if experiment == "E02":
+                from .e02 import trace_names
+
+                files = trace_names()
+            else:
+                files = [f"{case}.json" for case in CASES]
             # Keep profiler activity on the subprocess main thread.
             subprocess.run(
-                [sys.executable, "-m", "mlsys_lab.e01", "--output", str(root)],
-                timeout=120,
+                [sys.executable, "-m", "mlsys_lab." + experiment.lower(), "--output", str(root)],
+                timeout=300 if experiment == "E02" else 120,
                 check=True,
             )
             archive = io.BytesIO()
             metadata = {}
             with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
-                for name in ["summary.json", *(f"{case}.json" for case in CASES)]:
+                for name in ["summary.json", *files]:
                     path = root / name
                     if path.stat().st_size > 32 * 1024**2:
                         raise ValueError("trace_too_large")

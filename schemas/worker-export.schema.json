@@ -41,7 +41,8 @@
           "default": "E00",
           "enum": [
             "E00",
-            "E01"
+            "E01",
+            "E02"
           ],
           "title": "Experiment",
           "type": "string"
