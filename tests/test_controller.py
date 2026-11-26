@@ -147,3 +147,40 @@ def test_e01_uses_course_budget_and_exact_worker(setup):
     assert not c.Journal(store, "123", "1").record
     assert c.recover(c.Journal(store, "123", "1", "E01"), api) == "rejected"
     assert api.pod is None
+
+
+@pytest.mark.parametrize("scenario", ["lag", "other_writer", "never_visible"])
+def test_journal_confirms_one_write_with_bounded_reads(setup, monkeypatch, scenario):
+    store, *_ = setup
+    journal = c.Journal(store, "123", "1", "E02")
+    journal.save(phase="allocated")
+    previous = (journal.version, journal.record)
+    read, swap = store.read, store.swap
+    calls = []
+    writes = []
+
+    def observe(key):
+        calls.append(key)
+        if scenario == "other_writer":
+            return "different", {"phase": "different"}
+        if scenario == "lag" and len(calls) == 3:
+            return read(key)
+        return previous
+
+    def write(key, version, document):
+        writes.append(key)
+        swap(key, version, document)
+
+    monkeypatch.setattr(store, "read", observe)
+    monkeypatch.setattr(store, "swap", write)
+    monkeypatch.setattr(c.time, "sleep", lambda delay: None)
+    if scenario == "lag":
+        journal.save(hourly_cost=0.5)
+        assert journal.record["hourly_cost"] == 0.5
+        assert len(calls) == 3
+    else:
+        with pytest.raises(ValueError, match="journal_write_unconfirmed"):
+            journal.save(hourly_cost=0.5)
+        assert len(calls) == (1 if scenario == "other_writer" else 4)
+        assert (journal.version, journal.record) == previous
+    assert writes == [journal.key]

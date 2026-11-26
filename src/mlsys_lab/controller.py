@@ -51,9 +51,18 @@ class Journal:
         except LedgerError as exc:
             if str(exc) != "ledger_write_unknown":
                 raise
-        self.version, self.record = self.store.read(self.key)
-        if self.record != document or not self.version:
-            raise ValueError("journal_write_unconfirmed")
+        # A successful Contents write may briefly read back as its predecessor.
+        # Poll only the read. Never replay a write or a cloud operation here.
+        for delay in (0, 1, 2, 4):
+            if delay:
+                time.sleep(delay)
+            version, record = self.store.read(self.key)
+            if version and record == document:
+                self.version, self.record = version, record
+                return
+            if (version, record) != (self.version, self.record):
+                break
+        raise ValueError("journal_write_unconfirmed")
 
     def allocation(self, pod_id):
         return Allocation(
