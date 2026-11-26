@@ -6,7 +6,7 @@
 
 “Zero”指零系统优化经验。先修要求：Python、PyTorch tensor/autograd、基本线性代数、Linux 和 Git；kernel 路线补充 C++/CUDA 基础。
 
-**动手实验。** [E00 已在 RTX 4090 上通过端到端验收](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041)。下一课 [E01 · GPU 在等什么？](lessons/e01/README.zh-CN.md) 用单卡对比主机供数延迟与小算子启动开销。讲义和实验程序可在本地使用，[四组 RTX 4090 原始 trace 和诊断结果](docs/results/e01-45288496471.md)已可离线复查。
+**动手实验。** [E00 已在 RTX 4090 上通过端到端验收](https://github.com/jasonjiang8866/MLsysZero2Hero/actions/runs/44523422041)。下一课 [E01 · GPU 在等什么？](lessons/e01/README.zh-CN.md) 用单卡对比主机供数延迟与小算子启动开销。讲义和实验程序可在本地使用，[四组 RTX 4090 原始 trace 和诊断结果](docs/results/e01-45288496471.md)已可离线复查。接着进入 [E02 · 动手写一个融合的 RMSNorm 算子](lessons/e02/README.zh-CN.md)，比较手写前向 kernel 与 PyTorch eager 的数值误差、启动次数和延迟。
 
 ## 从一个问题开始
 
@@ -41,7 +41,7 @@
 
 项目所有者于 2026-11-16（新加坡时间）授权 **US$20、1000 分钟**。暂按所有已分配 GPU 的累计分钟数保守记账，包含启动和重试；计划将临时存储、清理等费用也纳入 US$20 内。累计准入逻辑已实现并通过离线测试，[E00 控制器](runpod/e00.md)现已接入课程远程账本。
 
-用户表示已配置 RunPod 仓库 secret；具体名称、可用性和 API 连通性尚待 Actions 安全预检验证。不要将凭据写入 issue、日志或产物。
+E00 和 E01 已通过手动 GPU 工作流使用仓库配置的 RunPod 凭据。各实验额度见[实验计划与记账规则](runpod/README.md)。
 
 ## 许可证
 
