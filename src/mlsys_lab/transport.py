@@ -44,7 +44,7 @@ def collect(
     now: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
 ) -> None:
-    if not 0 < timeout <= (900 if runtime.job.experiment == "E01" else 300):
+    if not 0 < timeout <= (900 if runtime.job.experiment in {"E01", "E02"} else 300):
         raise ValueError("collection_timeout_invalid")
     if destination.exists() or destination.is_symlink():
         raise ValueError("destination_exists")
@@ -85,19 +85,19 @@ def collect(
                 sleep(min(2**attempt, remaining()))
         raise AssertionError("unreachable")
 
-    is_e01 = runtime.job.experiment == "E01"
+    trace_bundle = runtime.job.experiment in {"E01", "E02"}
     staging: Path | None = None
     try:
         while True:
             remaining()
             try:
-                raw = read("/v1/status", 32 * 1024**2 if is_e01 else 4096)
-                if is_e01 and raw.startswith(b"PK\x03\x04"):
+                raw = read("/v1/status", 32 * 1024**2 if trace_bundle else 4096)
+                if trace_bundle and raw.startswith(b"PK\x03\x04"):
                     break
                 try:
                     value = json.loads(raw)
                 except (UnicodeDecodeError, json.JSONDecodeError):
-                    if not is_e01:
+                    if not trace_bundle:
                         raise
                     # A proxy can briefly serve a non-worker response during startup.
                     value = None
@@ -120,21 +120,27 @@ def collect(
                 if value["phase"] == "failed":
                     raise ProviderError("worker_failed")
                 if value["phase"] == "ready":
-                    if is_e01:
+                    if trace_bundle:
                         raise ProviderError("e01_ready_without_archive")
                     break
             sleep(min(1, remaining()))
         destination.parent.mkdir(parents=True, exist_ok=True)
         staging = Path(tempfile.mkdtemp(prefix=".course-collect-", dir=destination.parent))
-        if is_e01:
+        if trace_bundle:
             try:
                 envelope_raw = e01_hosted.unpack(raw, staging, runtime)
             except (ValueError, KeyError, TypeError) as exc:
                 # Preserve only known files after validating archive membership and run identity.
                 if (staging / "manifest.json").is_file():
-                    publish(staging, destination.with_name("e01-diagnostic"))
+                    publish(
+                        staging,
+                        destination.with_name(runtime.job.experiment.lower() + "-diagnostic"),
+                    )
                 code = str(exc)
                 if code in {
+                    "e02_summary_mismatch",
+                    "e02_case_mismatch",
+                    "e02_trace_mismatch",
                     "e01_summary_mismatch",
                     "e01_trace_mismatch",
                     "e01_timing_invalid",

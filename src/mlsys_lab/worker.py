@@ -30,7 +30,7 @@ GPU = Literal[
 class Job(Strict):
     schema_version: Literal[1] = 1
     repository: Literal["jasonjiang8866/MLsysZero2Hero"] = "jasonjiang8866/MLsysZero2Hero"
-    experiment: Literal["E00", "E01"] = "E00"
+    experiment: Literal["E00", "E01", "E02"] = "E00"
     attempt: Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,80}$")]
     source_sha: SHA
     image_digest: Annotated[str, Field(pattern=r"^sha256:[a-f0-9]{64}$")]
@@ -40,7 +40,7 @@ class Job(Strict):
 
     @property
     def image(self) -> str:
-        if self.experiment == "E01":
+        if self.experiment in {"E01", "E02"}:
             return "pytorch/pytorch@" + self.image_digest
         return IMAGE + self.image_digest
 

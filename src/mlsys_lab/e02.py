@@ -19,6 +19,15 @@ REPEATS = 7
 BATCH = 20
 
 
+def trace_names():
+    return {
+        f"{dtype}-{rows}x{width}-s{step}-{method}.json"
+        for dtype in TOLERANCES
+        for rows, width, step in CASES
+        for method in ("eager", "fused")
+    }
+
+
 def inputs(torch, rows, width, step, dtype, device):
     gen = torch.Generator().manual_seed(SEED)
     values = torch.randn(rows, width, generator=gen).to(dtype=dtype, device=device)
@@ -52,7 +61,11 @@ def fused(torch, x, weight):
 def compare(torch, result, expected, tolerance):
     actual = result.cpu().double()
     torch.testing.assert_close(actual, expected, rtol=tolerance, atol=tolerance)
-    return (actual - expected).abs().max().item()
+    error = (actual - expected).abs()
+    return {
+        "max_abs_error": error.max().item(),
+        "max_tolerance_ratio": (error / (tolerance + tolerance * expected.abs())).max().item(),
+    }
 
 
 def reference(torch, x, weight):
@@ -116,7 +129,7 @@ def run(output):
                 stats[name] = {
                     "samples_us": samples[name],
                     "median_us": median(samples[name]),
-                    "max_abs_error": errors[name],
+                    **errors[name],
                     "kernels": count,
                     "trace": filename,
                     "trace_sha256": hashlib.sha256(trace.read_bytes()).hexdigest(),
@@ -126,6 +139,10 @@ def run(output):
                     "shape": [rows, width],
                     "dtype": dtype,
                     "strides": list(x.stride()),
+                    "input_sha256": hashlib.sha256(
+                        x.cpu().contiguous().numpy().tobytes()
+                    ).hexdigest(),
+                    "weight_sha256": hashlib.sha256(w.cpu().numpy().tobytes()).hexdigest(),
                     "atol": tolerance,
                     "rtol": tolerance,
                     "methods": stats,
@@ -142,6 +159,7 @@ def run(output):
         "cuda": torch.version.cuda,
         "python": platform.python_version(),
         "gpu": torch.cuda.get_device_name(),
+        "device_count": torch.cuda.device_count(),
         "compute_capability": torch.cuda.get_device_capability(),
         "source_sha256": {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
